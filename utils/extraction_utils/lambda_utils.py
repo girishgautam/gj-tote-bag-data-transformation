@@ -17,16 +17,17 @@ def default_converter(row):
         return row.isoformat()
 
 def create_filename(table_name):
-    timestamp = datetime.now()
-    year = timestamp.year
-    month = timestamp.month
-    day = timestamp.day
-    hour = timestamp.hour
-    minute = timestamp.minute
-    seconds = timestamp.second
+    timestamp = datetime.now().strftime("%d/%m/%Y, %H:%M:%S")
+    # year = timestamp.year
+    # month = timestamp.month
+    # day = timestamp.day
+    # hour = timestamp.hour
+    # minute = timestamp.minute
+    # seconds = timestamp.second
+    print(timestamp)
 
-    filename = f"{table_name}/{year}/{month}/{day}/{hour}/{minute}{timestamp}.json"
-    return filename
+    # filename = f"{table_name}/{year}/{month}/{day}/{hour}/{minute}/{timestamp}.json"
+    # return filename
 
 table_name = "example_table"
 filename = create_filename(table_name)

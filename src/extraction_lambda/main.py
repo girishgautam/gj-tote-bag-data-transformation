@@ -7,7 +7,6 @@ from utils.extraction_utils.lambda_utils import upload_to_s3, default_converter
 
 
 def get_secret():
-
     secret_name = "totesys_database"
     region_name = "eu-west-2"
 
@@ -25,26 +24,6 @@ def get_secret():
         return get_secret_value_response
     except ClientError as e:
         raise e
-
-# print(get_secret())
-
-con = pg8000.native.Connection(
-  database="totesys",
-  user="project_team_1",
-  password="Br5J33Bw8I4YMiv",
-  host="nc-data-eng-totesys-production.chpsczt8h1nu.eu-west-2.rds.amazonaws.com",
-  port=5432
-)
-# query = 'SELECT * FROM purchase_order LIMIT 2'
-# result = con.run(query)
-# print(result)
-def upload_to_s3(data, bucket_name, object_name):
-    s3_client = boto3.client('s3')
-    try:
-        response = s3_client.put_object(Bucket=bucket_name, Key=object_name, Body=data)
-        print(f'Successfully uploaded {object_name} to {bucket_name}')
-    except ClientError as e:
-        print(f'Failed to upload {object_name} to {bucket_name}: {e}')
 
 
 
@@ -67,6 +46,3 @@ def extract_data(s3_client, conn):
 
         upload_to_s3(data_json, 'your-bucket-name', f'{table}.json')
 
-
-
-extract_data(con)
