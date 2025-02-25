@@ -1,0 +1,1 @@
+data "aws_iam_policy_attachment" "iam_policy"{}

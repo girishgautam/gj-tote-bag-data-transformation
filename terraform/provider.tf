@@ -5,6 +5,11 @@ terraform{
             version = "~> 5.0"
         }
     }
+    backend "s3" {
+        bucket = "data-squid-tf-bucket"
+        key = "de-project-specification/build.tfstate"
+        region = "eu-west-2"
+    }
 }
 
 
