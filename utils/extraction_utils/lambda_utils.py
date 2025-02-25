@@ -6,6 +6,20 @@ import json
 
 
 def upload_to_s3(data, bucket_name, object_name):
+    """
+    Uploads data to an S3 bucket.
+
+    Args:
+        data (str or bytes): The data to be uploaded to the S3 bucket.
+        bucket_name (str): The name of the target S3 bucket.
+        object_name (str): The name of the object to be created in the S3 bucket.
+
+    Raises:
+        ClientError: If the upload fails due to a client-side error with the AWS S3 service.
+
+    Prints:
+        A success message if the upload is successful, or an error message if the upload fails.
+    """
     s3_client = boto3.client('s3')
     try:
         s3_client.put_object(Bucket=bucket_name, Key=object_name, Body=data)
@@ -64,4 +78,3 @@ def format_data_to_json(rows, columns):
     data = [dict(zip(columns, row)) for row in rows]
     data_json = json.dumps(data, default=default_converter)
     return data_json
-
