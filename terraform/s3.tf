@@ -26,8 +26,3 @@ resource "aws_s3_bucket" "transform_bucket"{
     bucket_prefix = "data-squid-transform-bucket-"
 
 }
-
-resource "aws_s3_bucket" "load_bucket"{
-    bucket_prefix = "data-squid-load-bucket-"
-
-}
