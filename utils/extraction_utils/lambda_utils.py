@@ -30,7 +30,8 @@ def create_filename(table_name):
 
 
 def collect_credentials_from_AWS(sm_client, secret_id):
-
+    '''Returns credentials from AWS Secret Manager, function
+    designed to be called from within connection_to_database function'''
     response = sm_client.get_secret_value(SecretId=secret_id)
     response_json = json.loads(response["SecretString"])
 
@@ -38,6 +39,8 @@ def collect_credentials_from_AWS(sm_client, secret_id):
 
 
 def connection_to_database():
+    '''Returns instance of pg8000 Connection for users to run database 
+    queries from'''
 
     sm_client = boto3.client('secretsmanager')
     secret_id = 'arn:aws:secretsmanager:eu-west-2:195275662632:secret:totesys_database-RBM0fV'
@@ -54,9 +57,9 @@ def connection_to_database():
 
 
 def check_for_data(s3_client, bucket_name):
-    ''' This checks for presence of data in S3 Ingestion Bucket'''
+    '''This checks for presence of data in S3 Ingestion Bucket'''
+
     response = s3_client.list_objects_v2(Bucket=bucket_name)
-    print(response)
     return False if response['KeyCount'] < 1 else True
 
 
