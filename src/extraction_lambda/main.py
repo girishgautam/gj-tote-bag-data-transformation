@@ -1,0 +1,72 @@
+import pg8000.native
+import boto3
+from botocore.exceptions import ClientError
+import json
+from utils.extraction_utils.lambda_utils import upload_to_s3, default_converter
+
+
+
+def get_secret():
+
+    secret_name = "totesys_database"
+    region_name = "eu-west-2"
+
+    # Create a Secrets Manager client
+    session = boto3.session.Session()
+    client = session.client(
+        service_name='secretsmanager',
+        region_name=region_name
+    )
+
+    try:
+        get_secret_value_response = client.get_secret_value(
+            SecretId="totesys_database"
+        )
+        return get_secret_value_response
+    except ClientError as e:
+        raise e
+
+# print(get_secret())
+
+con = pg8000.native.Connection(
+  database="totesys",
+  user="project_team_1",
+  password="Br5J33Bw8I4YMiv",
+  host="nc-data-eng-totesys-production.chpsczt8h1nu.eu-west-2.rds.amazonaws.com",
+  port=5432
+)
+# query = 'SELECT * FROM purchase_order LIMIT 2'
+# result = con.run(query)
+# print(result)
+def upload_to_s3(data, bucket_name, object_name):
+    s3_client = boto3.client('s3')
+    try:
+        response = s3_client.put_object(Bucket=bucket_name, Key=object_name, Body=data)
+        print(f'Successfully uploaded {object_name} to {bucket_name}')
+    except ClientError as e:
+        print(f'Failed to upload {object_name} to {bucket_name}: {e}')
+
+
+
+def extract_data(s3_client, conn):
+    s3_client = boto3.client('s3')
+    # table_names = ['address', 'counterparty', 'design', 'sales_order'
+    #                'transaction', 'payment', 'payment_type',
+    #                'currency', 'staff', 'department', 'purchase_order']
+    table_names = ['address']
+
+
+    for table in table_names:
+        query = f'SELECT * FROM {table} LIMIT 2'
+        rows = conn.run(query)
+        columns = [col["name"] for col in conn.columns]
+
+        data = [dict(zip(columns, row)) for row in rows]
+        data_json = json.dumps(data, default=default_converter)
+        # filename = util_filenam(table)
+
+        upload_to_s3(data_json, 'your-bucket-name', f'{table}.json')
+
+
+
+extract_data(con)
