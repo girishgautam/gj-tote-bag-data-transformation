@@ -1,5 +1,8 @@
-from utils.extraction_utils.lambda_utils import collect_credentials_from_AWS, connection_to_database, check_for_data
+from utils.extraction_utils.lambda_utils import collect_credentials_from_AWS, connection_to_database, check_for_data, upload_to_s3, default_converter, create_filename, format_data_to_json
+from datetime import datetime, timezone
+from unittest.mock import patch
 from moto import mock_aws
+from botocore.exceptions import ClientError
 import boto3
 import pytest
 import os
@@ -68,3 +71,70 @@ class TestCheckForData:
             # call check for data
             result = check_for_data(s3_client, bucket_name='TestBucket')
             assert result == True
+
+class TestUploadToS3:
+
+    @mock_aws
+    def test_upload_to_s3_success(self):
+        bucket_name = "test-bucket"
+        object_name = "test-object.txt"
+        data = b"Sample data"
+
+        s3_client = boto3.client("s3")
+        s3_client.create_bucket(Bucket=bucket_name, CreateBucketConfiguration={'LocationConstraint': 'eu-west-2'})
+
+        upload_to_s3(data, bucket_name, object_name)
+
+        response = s3_client.get_object(Bucket=bucket_name, Key=object_name)
+        assert response["Body"].read() == data
+
+
+    @mock_aws
+    def test_upload_to_s3_failure(self):
+        bucket_name = "nonexistent-bucket"
+        object_name = "test-object.txt"
+        data = b"Sample data"
+
+        with pytest.raises(ClientError):
+            upload_to_s3(data, bucket_name, object_name)
+
+class TestDefaultConverter:
+
+    def test_default_converter_with_datetime(self):
+        dt = datetime(2023, 3, 14, 15, 9, 26)
+        assert default_converter(dt) == "2023-03-14T15:09:26"
+
+
+class TestCreateFilename:
+
+    def test_create_filename(self):
+        table_name = "test_table"
+        mock_datetime = datetime(2025, 2, 25, 15, 9, 26, 123456)
+
+        with patch('utils.extraction_utils.lambda_utils.datetime') as mock_dt:
+            mock_dt.now.return_value = mock_datetime
+            
+            expected_filename = "test_table/2025/02/25/2025-02-25T15:09:26.123456.json"
+            result = create_filename(table_name)
+            assert result == expected_filename
+
+class TestFormatDataToJson:
+
+    @pytest.fixture
+    def sample_data(self):
+        rows = [
+            (1, "Alice", 25),
+            (2, "Bob", 30)
+        ]
+        columns = ["id", "name", "age"]
+        return rows, columns
+
+    def test_format_data_to_json(self, sample_data):
+        rows, columns = sample_data
+        expected_output = json.dumps([
+            {"id": 1, "name": "Alice", "age": 25},
+            {"id": 2, "name": "Bob", "age": 30}
+        ])
+
+        assert format_data_to_json(rows, columns) == expected_output
+    
