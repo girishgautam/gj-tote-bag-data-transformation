@@ -5,28 +5,6 @@ import json
 from utils.extraction_utils.lambda_utils import upload_to_s3, default_converter
 
 
-
-def get_secret():
-    secret_name = "totesys_database"
-    region_name = "eu-west-2"
-
-    # Create a Secrets Manager client
-    session = boto3.session.Session()
-    client = session.client(
-        service_name='secretsmanager',
-        region_name=region_name
-    )
-
-    try:
-        get_secret_value_response = client.get_secret_value(
-            SecretId="totesys_database"
-        )
-        return get_secret_value_response
-    except ClientError as e:
-        raise e
-
-
-
 def extract_data(s3_client, conn):
     s3_client = boto3.client('s3')
     # table_names = ['address', 'counterparty', 'design', 'sales_order'
