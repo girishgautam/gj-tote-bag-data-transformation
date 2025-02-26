@@ -2,7 +2,9 @@ from pg8000.native import Connection
 import boto3
 from datetime import datetime
 from botocore.exceptions import ClientError
+from decimal import Decimal
 import json
+import io
 
 
 def upload_to_s3(data, bucket_name, object_name):
@@ -23,27 +25,11 @@ def upload_to_s3(data, bucket_name, object_name):
     s3_client = boto3.client("s3")
     try:
         s3_client.put_object(Bucket=bucket_name, Key=object_name, Body=data)
-        print(f"Successfully uploaded {object_name} to {bucket_name}")
+        # print(f"Successfully uploaded {object_name} to {bucket_name}")
     except ClientError as e:
-        print(f"Failed to upload {object_name} to {bucket_name}: {e}")
+        # print(f"Failed to upload {object_name} to {bucket_name}: {e}")
         raise
 
-
-def default_converter(row):
-    """
-    Converts a datetime object to an ISO 8601 formatted string.
-
-    Args:
-        row (Any): The value to be converted. If the value is a datetime object,
-                   it will be converted to an ISO 8601 string.
-
-    Returns:
-        str or Any: An ISO 8601 formatted string if the input is a datetime object;
-                    otherwise, returns the original input unchanged.
-    """
-
-    if isinstance(row, datetime):
-        return row.isoformat()
 
 
 def create_filename(table_name):
@@ -103,40 +89,36 @@ def check_for_data(s3_client, bucket_name):
     response = s3_client.list_objects_v2(Bucket=bucket_name)
     return False if response["KeyCount"] < 1 else True
 
+class CustomEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, datetime):
+            return obj.isoformat()
+        elif isinstance(obj, Decimal):
+            return float(obj)
+        return super().default(obj)
 
 def format_data_to_json(rows, columns):
     """
-    Formats data from rows and columns into a JSON string.
+    Convert data from rows and columns into a JSON-formatted bytes object.
 
     Args:
-        rows (list of tuple): A list of rows, where each row is a tuple containing the data.
-        columns (list of str): A list of column names corresponding to the data in the rows.
+        rows (list of tuple): A list of tuples containing the data to be converted.
+        columns (list of str): A list of column names corresponding to the data in rows.
 
     Returns:
-        str: A JSON-formatted string representing the data, where each row is converted
-             to a dictionary with column names as keys.
+        bytes: A bytes object containing the JSON-formatted data.
 
-    Notes:
-        The function uses a custom converter for datetime objects, converting them into
-        ISO 8601 formatted strings using the `default_converter` function.
-    """
-    data = [dict(zip(columns, row)) for row in rows]
-    data_json = json.dumps(data, default=default_converter)
-    return data_json
-
-import io
-def format_to_json(rows, columns):
-    """Function receives rows and columns as arguments from either initial or continuous
-    extract functions and creates a file-like object of JSON format in the buffer.
-    The pointer in the buffer is reset to the beginning of the file and returns the buffer
-    contents, so the file-like object can be put into S3 bucket with store_in_s3 function.
-    Function allows to avoid potential security breaches that arise when data is saved locally.
+    The function uses a custom JSON encoder (CustomEncoder) to handle non-serializable
+    objects such as datetime and Decimal. The data is first converted into a list of
+    dictionaries, where each dictionary represents a row of data with column names as keys.
+    The resulting list of dictionaries is then serialized into JSON and returned as a
+    UTF-8 encoded bytes object.
     """
     data = [dict(zip(columns, row)) for row in rows]
 
     json_buffer = io.StringIO()
-    json.dump(data, json_buffer)
+    json.dump(data, json_buffer, cls=CustomEncoder)
 
     json_buffer.seek(0)
 
-    return json_buffer
+    return json_buffer.getvalue().encode('utf-8')
