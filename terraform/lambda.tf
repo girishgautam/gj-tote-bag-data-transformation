@@ -1,17 +1,26 @@
 #todo install dependencies to packages using terraform
 
-resource "terraform_data" "create_dependencies" {
-    provisioner "local-exec" {
-        command = "pip install -r ../requirements.txt -t ../dependencies/python"
-        #interpreter = ["/bin/bash", "-c"]
-        #command = "echo 'hello world' > hello_world.txt"
-    }
-    # triggers = {
-    #     #dependencies = filemd5("${path.module}/../requirements.txt")
-    #     always_run = timestamp()
-    # }
-}
+# resource "terraform_data" "create_dependencies" {
+#     provisioner "local-exec" {
+#         command = "pip install -r ../requirements.txt -t ../dependencies/python"
+#         #interpreter = ["/bin/bash", "-c"]
+#         #command = "echo 'hello world' > hello_world.txt"
+#     }
+#     # triggers = {
+#     #     #dependencies = filemd5("${path.module}/../requirements.txt")
+#     #     always_run = timestamp()
+#     # }
+# }
 
+resource "null_resource" "lambda_layer" {
+  triggers = {
+    requirements = filesha1("${path.module}/../requirements-lambda.txt")
+  }
+  # the command to install python and dependencies to the machine and zips
+  provisioner "local-exec" {
+    command = "${path.module}/../bin/archive_dependencies.sh"
+  }
+}
 
 
 # Archived code for extract lambda
@@ -95,6 +104,7 @@ resource "aws_lambda_layer_version" "dependencies_layer" {
   layer_name = "dependencies-layer"
   compatible_runtimes = ["python3.12"]
   s3_bucket = aws_s3_bucket.code_bucket.bucket
-  s3_key = "dependencies/dependencies.zip"
+  # s3_key = "dependencies/${var.dependencies_zip_filename}"
+  s3_key = "dependencies/dependencies-2.zip"
 }
 

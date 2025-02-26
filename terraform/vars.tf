@@ -17,3 +17,9 @@ variable "extraction_utils" {
     type = string
     default = "extraction_utils"
 }
+
+variable "dependencies_zip_filename" {
+    type = string
+    # Manual workaround etag/source_hash error to force uploads to S3:
+    default = "dependencies-2.zip"
+}
