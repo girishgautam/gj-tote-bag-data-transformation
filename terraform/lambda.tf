@@ -18,6 +18,12 @@ resource "aws_lambda_function" "extract_lambda" {
     handler = "${var.extract_lambda}.lambda_handler"
     timeout = 60
     runtime = "python3.12"
+
+    environment {
+    variables = {
+      BUCKET_INGEST = aws_s3_bucket.ingest_bucket.bucket
+    }
+  }
 }
 
 # Lambda layer containing extract code
