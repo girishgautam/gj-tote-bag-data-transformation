@@ -3,14 +3,15 @@ from utils.extraction_utils.lambda_utils import (
     connection_to_database,
     check_for_data,
     upload_to_s3,
-    default_converter,
     create_filename,
     format_data_to_json,
 )
-from datetime import datetime, timezone
-from unittest.mock import patch
+from datetime import datetime
+from unittest.mock import patch, MagicMock
 from moto import mock_aws
 from botocore.exceptions import ClientError
+from decimal import Decimal
+from src.extraction_lambda.main import extract_data
 import boto3
 import pytest
 import os
@@ -126,16 +127,6 @@ class TestUploadToS3:
             upload_to_s3(data, bucket_name, object_name)
 
 
-class TestDefaultConverter:
-
-    def test_default_converter_with_datetime(self):
-        """
-        Tests that `default_converter` correctly converts a datetime object to an ISO 8601 string.
-        """
-        dt = datetime(2023, 3, 14, 15, 9, 26)
-        assert default_converter(dt) == "2023-03-14T15:09:26"
-
-
 class TestCreateFilename:
 
     def test_create_filename(self):
@@ -153,21 +144,105 @@ class TestCreateFilename:
             assert result == expected_filename
 
 
-class TestFormatDataToJson:
+class TestFormatDataToJson():
 
-    @pytest.fixture
-    def sample_data(self):
-        rows = [(1, "Alice", 25), (2, "Bob", 30)]
-        columns = ["id", "name", "age"]
-        return rows, columns
-
-    def test_format_data_to_json(self, sample_data):
+    def test_format_data_to_json(self):
         """
-        Tests that `format_data_to_json` correctly converts rows and columns into a JSON string.
+        Verify that format_data_to_json correctly converts rows and columns into
+        a JSON-formatted bytes object, handling various data types such as datetime
+        and Decimal.
         """
-        rows, columns = sample_data
-        expected_output = json.dumps(
-            [{"id": 1, "name": "Alice", "age": 25}, {"id": 2, "name": "Bob", "age": 30}]
-        )
+        rows = [
+            (1, 'Alice', datetime(2025, 2, 26, 14, 33), Decimal('100.00')),
+            (2, 'Bob', datetime(2025, 2, 27, 15, 40), Decimal('200.50'))
+        ]
+        columns = ['id', 'name', 'timestamp', 'amount']
+        expected_data = [
+            {'id': 1, 'name': 'Alice', 'timestamp': '2025-02-26T14:33:00', 'amount': 100.00},
+            {'id': 2, 'name': 'Bob', 'timestamp': '2025-02-27T15:40:00', 'amount': 200.50}
+        ]
 
-        assert format_data_to_json(rows, columns) == expected_output
+        result = format_data_to_json(rows, columns)
+
+        # Decode the result back to JSON object
+        result_data = json.loads(result.decode('utf-8'))
+
+        # Assert that the resulting JSON data matches the expected data
+        assert result_data == expected_data
+
+class TestExtractData():
+
+    @patch('src.extraction_lambda.main.check_for_data')
+    @patch('src.extraction_lambda.main.s3_client')
+    @patch('src.extraction_lambda.main.conn')
+    @patch('src.extraction_lambda.main.format_data_to_json')
+    @patch('src.extraction_lambda.main.create_filename')
+    @patch('src.extraction_lambda.main.upload_to_s3')
+    def test_extract_data(self, mock_upload_to_s3, mock_create_filename, mock_format_data_to_json, mock_conn, mock_s3_client, mock_check_for_data):
+        mock_conn.run.return_value = [{'id': 1, 'name': 'example'}]
+        mock_conn.columns = [{'name': 'id'}, {'name': 'name'}]
+        mock_check_for_data.return_value = True
+        mock_s3_client.get_object.return_value = {'Body': MagicMock(read=lambda: b'2023-02-24T10:00:00')}
+        mock_format_data_to_json.return_value = json.dumps([{'id': 1, 'name': 'example'}]).encode('utf-8')
+        mock_create_filename.return_value = 'testfile.json'
+
+        bucket_name = 'test-bucket'
+        s3_client = mock_s3_client
+        conn = mock_conn
+
+        table_names = ['address', 'counterparty', 'design', 'sales_order',
+                       'transaction', 'payment', 'payment_type',
+                       'currency', 'staff', 'department', 'purchase_order']
+
+        extraction_type, result_message = extract_data(s3_client, conn, bucket_name)
+
+        assert extraction_type == 'Continuous extraction'
+        assert 'Tables extracted' in result_message
+        assert 'address' in result_message
+
+        # Ensure that upload_to_s3 was called for each table
+        assert mock_upload_to_s3.call_count == len(table_names)
+        for table in table_names:
+            mock_upload_to_s3.assert_any_call(mock_format_data_to_json.return_value, bucket_name, mock_create_filename.return_value)
+
+        # Verify that the last_extracted timestamp is correctly formatted
+        last_extracted = datetime.now().isoformat()
+        actual_last_extracted_call = mock_s3_client.put_object.call_args[1]['Body'].decode('utf-8')
+        assert actual_last_extracted_call.startswith(last_extracted[:19])
+
+    @patch('src.extraction_lambda.main.check_for_data')
+    @patch('src.extraction_lambda.main.s3_client')
+    @patch('src.extraction_lambda.main.conn')
+    @patch('src.extraction_lambda.main.format_data_to_json')
+    @patch('src.extraction_lambda.main.create_filename')
+    @patch('src.extraction_lambda.main.upload_to_s3')
+    def test_initial_extraction(self, mock_upload_to_s3, mock_create_filename, mock_format_data_to_json, mock_conn, mock_s3_client, mock_check_for_data):
+        mock_conn.run.return_value = [{'id': 1, 'name': 'example'}]
+        mock_conn.columns = [{'name': 'id'}, {'name': 'name'}]
+        mock_check_for_data.return_value = False  # No data available
+        mock_format_data_to_json.return_value = json.dumps([{'id': 1, 'name': 'example'}]).encode('utf-8')
+        mock_create_filename.return_value = 'testfile.json'
+
+        bucket_name = 'test-bucket'
+        s3_client = mock_s3_client
+        conn = mock_conn
+
+        table_names = ['address', 'counterparty', 'design', 'sales_order',
+                       'transaction', 'payment', 'payment_type',
+                       'currency', 'staff', 'department', 'purchase_order']
+
+        extraction_type, result_message = extract_data(s3_client, conn, bucket_name)
+
+        assert extraction_type == 'Initial extraction'
+        assert 'Tables extracted' in result_message
+        assert 'address' in result_message
+
+        # Ensure that upload_to_s3 was called for each table
+        assert mock_upload_to_s3.call_count == len(table_names)
+        for table in table_names:
+            mock_upload_to_s3.assert_any_call(mock_format_data_to_json.return_value, bucket_name, mock_create_filename.return_value)
+
+        # Verify that the last_extracted timestamp is correctly formatted
+        last_extracted = datetime.now().isoformat()
+        actual_last_extracted_call = mock_s3_client.put_object.call_args[1]['Body'].decode('utf-8')
+        assert actual_last_extracted_call.startswith(last_extracted[:19])  # Check up to seconds to avoid precision issues
