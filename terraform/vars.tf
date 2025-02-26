@@ -13,3 +13,7 @@ variable "load_lamabda" {
     default = "load_lambda"
 }
 
+variable "extraction_utils" {
+    type = string
+    default = "extraction_utils"
+}
