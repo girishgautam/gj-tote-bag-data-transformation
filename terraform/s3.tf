@@ -2,13 +2,11 @@ resource "aws_s3_bucket" "code_bucket"{
     bucket_prefix = "data-squid-code-"
 
 }
-resource "aws_s3_object" "lambda_code"{
+resource "aws_s3_object" "extract_lambda_code"{
     bucket = aws_s3_bucket.code_bucket.bucket
-    key = "${each.key}/function.zip"
-    source = "${path.module}/../packages/${each.key}/function.zip"
-    for_each = toset([var.extract_lambda])#, var.transform_lambda, var.load_lamabda])
-    etag = filemd5("${path.module}/../packages/${each.key}/function.zip")
-
+    key = "extract_lambda/function.zip"
+    source = "${path.module}/../packages/extract_lambda/function.zip"
+    etag = filemd5("${path.module}/../packages/extract_lambda/function.zip")
 }
 
 # resource "aws_s3_object" "lambda_code"{
@@ -32,9 +30,9 @@ resource "aws_s3_bucket" "transform_bucket"{
 
 resource "aws_s3_object" "extraction_utils" {
     bucket = aws_s3_bucket.code_bucket.bucket
-    key = "${var.extraction_utils}/extraction_utils.zip"
+    key = "${var.extraction_utils}/${var.extraction_utils_zip_filename}"
     source = "${path.module}/../packages/${var.extraction_utils}/extraction_utils.zip"
-    etag = filemd5("${path.module}/../packages/${var.extraction_utils}/extraction_utils.zip")
+    # etag = filemd5("${path.module}/../packages/${var.extraction_utils}/extraction_utils.zip")
 }
 
 
