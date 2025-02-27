@@ -41,12 +41,12 @@ data "archive_file" "extraction_utils"{
 
 
 
-data "archive_file" "dependencies"{
-    type = "zip"
-    output_file_mode = "0666"
-    source_dir = "${path.module}/../dependencies/"
-    output_path = "${path.module}/../packages/dependencies/dependencies.zip"
-}
+# data "archive_file" "dependencies"{
+#     type = "zip"
+#     output_file_mode = "0666"
+#     source_dir = "${path.module}/../dependencies/"
+#     output_path = "${path.module}/../packages/dependencies/dependencies.zip"
+# }
 
 #transform lambda archive
 data "archive_file" "transform_lambda" {
