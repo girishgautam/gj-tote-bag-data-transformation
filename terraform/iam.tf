@@ -80,3 +80,36 @@ resource "aws_iam_role_policy_attachment" "extract-lambda-cloudwatch" {
 #   function_name = aws_lambda_function.extract_lambda.function_name
 #   # source_arn = ""
 # }
+
+
+
+#create iam for sns
+
+data "aws_iam_policy_document" "ingestion_sns_topic_policy" {
+
+  statement {
+    actions = [
+      "SNS:Subscribe",
+      "SNS:Receive"
+    ]
+
+    condition {
+      test     = "StringEquals"
+      variable = "AWS:SourceOwner"
+      values = [
+        195275662632
+      ]
+    }
+
+    effect = "Allow"
+
+    principals {
+      type        = "AWS"
+      identifiers = ["*"]
+    }
+
+    resources = [
+      aws_sns_topic.email_alert.arn
+    ]
+  }
+}

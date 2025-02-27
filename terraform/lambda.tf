@@ -1,37 +1,82 @@
 # Archived code for extract lambda
 data "archive_file" "extract_lambda"{
     type = "zip"
-    output_file_mode = "0664"
+    output_file_mode = "0666"
     source_file = "${path.module}/../src/extraction_lambda/main.py"
     output_path = "${path.module}/../packages/${var.extract_lambda}/function.zip"
 }
 
 # Create extract lambda
 resource "aws_lambda_function" "extract_lambda" {
-    role = resource.aws_iam_role.lambda_role.arn
+    role = aws_iam_role.lambda_role.arn
     function_name = var.extract_lambda
     s3_bucket = aws_s3_bucket.code_bucket.bucket
     s3_key = "${var.extract_lambda}/function.zip"
     layers = [
-      aws_lambda_layer_version.lambda_layer.arn
+      aws_lambda_layer_version.lambda_layer.arn,
+      aws_lambda_layer_version.extraction_utils_layer.arn,
+      aws_lambda_layer_version.dependencies_layer.arn
     ]
     handler = "${var.extract_lambda}.lambda_handler"
-    timeout = 60
+    timeout = 900
     runtime = "python3.12"
+
+    environment {
+    variables = {
+      BUCKET_INGEST = aws_s3_bucket.ingest_bucket.bucket
+    }
+  }
 }
 
-# Lambda layer containing extract code
-resource "aws_lambda_layer_version" "lambda_layer" {
-  layer_name = "lambda-layer"
-  compatible_runtimes = ["python3.12"]
-  s3_bucket = aws_s3_bucket.code_bucket.bucket
-  s3_key = "${var.extract_lambda}/function.zip"
+
+
+
+
+data "archive_file" "extraction_utils"{
+    type = "zip"
+    output_file_mode = "0666"
+    source_dir = "${path.module}/../utils/extraction_utils/"
+    output_path = "${path.module}/../packages/extraction_utils/extraction_utils.zip"
 }
 
 
-# data "archive_file" "transform_lambda" {
-#     type = "zip"
-#     output_file_mode = "0664"
-#     source_file = "${path.module}/.."
-#     output_path = "${path.module}/../packages/transform_lambda.zip"
-# }
+
+data "archive_file" "dependencies"{
+    type = "zip"
+    output_file_mode = "0666"
+    source_dir = "${path.module}/../dependencies/"
+    output_path = "${path.module}/../packages/dependencies/dependencies.zip"
+}
+
+#transform lambda archive
+data "archive_file" "transform_lambda" {
+    type = "zip"
+    output_file_mode = "0666"
+    source_file = "${path.module}/../transformation_lambda/main.py"
+    output_path = "${path.module}/../packages/transform_lambda.zip"
+}
+
+#provision transform lambda
+resource "aws_lambda_function" "transform_lambda" {
+    role = aws_iam_role.lambda_role.arn
+    function_name = var.transform_lambda
+    s3_bucket = aws_s3_bucket.code_bucket.bucket
+    s3_key = aws_s3_object.transform_lambda.key
+    layers = [
+      # aws_lambda_layer_version.lambda_layer.arn,
+      aws_lambda_layer_version.transform_lambda_layer.arn,
+      aws_lambda_layer_version.dependencies_layer.arn
+    ]
+    handler = "${var.transform_lambda}.lambda_handler"
+    timeout = 900
+    runtime = "python3.12"
+
+    environment {
+    variables = {
+      BUCKET_TRANSFORM = aws_s3_bucket.transform_bucket.bucket
+    }
+  }
+}
+
+
+
