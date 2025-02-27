@@ -6,7 +6,7 @@ resource "aws_s3_object" "extract_lambda_code"{
     bucket = aws_s3_bucket.code_bucket.bucket
     key = "extract_lambda/function.zip"
     source = "${path.module}/../packages/extract_lambda/function.zip"
-    etag = filemd5("${path.module}/../packages/extract_lambda/function.zip")
+    #etag = filemd5("${path.module}/../packages/extract_lambda/function.zip")
 }
 
 # resource "aws_s3_object" "lambda_code"{
