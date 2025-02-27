@@ -39,7 +39,7 @@ resource "aws_lambda_layer_version" "transform_lambda_layer" {
 }
 
 #transform util layer
-resource "aws_lambda_layer_version" "transform_lambda_layer" {
+resource "aws_lambda_layer_version" "transform_lambda_util_layer" {
   layer_name = "${var.transform_lambda}-layer"
   compatible_runtimes = ["python3.12"]
   s3_bucket = aws_s3_bucket.code_bucket.bucket
