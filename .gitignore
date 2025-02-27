@@ -19,3 +19,4 @@ venv/
 terraform/init.sh
 zen.txt
 *.tfstate*
+dependencies
