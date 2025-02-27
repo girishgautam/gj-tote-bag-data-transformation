@@ -48,3 +48,10 @@ resource "aws_s3_object" "lambda_dependencies" {
     #etag = filemd5("${path.module}/../packages/dependencies/dependencies.zip")
     # source_hash = filemd5("${path.module}/../packages/dependencies/dependencies.zip")
 }
+
+resource "aws_s3_object" "transform_lambda" {
+    bucket = aws_s3_bucket.code_bucket.bucket
+    key = "${var.transform_lambda}/${var.extraction_utils_zip_filename}"
+    source = data.archive_file.transform_lambda.output_path
+
+}

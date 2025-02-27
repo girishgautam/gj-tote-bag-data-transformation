@@ -1,28 +1,3 @@
-#todo install dependencies to packages using terraform
-
-# resource "terraform_data" "create_dependencies" {
-#     provisioner "local-exec" {
-#         command = "pip install -r ../requirements.txt -t ../dependencies/python"
-#         #interpreter = ["/bin/bash", "-c"]
-#         #command = "echo 'hello world' > hello_world.txt"
-#     }
-#     # triggers = {
-#     #     #dependencies = filemd5("${path.module}/../requirements.txt")
-#     #     always_run = timestamp()
-#     # }
-# }
-
-resource "null_resource" "lambda_layer" {
-  triggers = {
-    requirements = filesha1("${path.module}/../requirements-lambda.txt")
-  }
-  # the command to install python and dependencies to the machine and zips
-  provisioner "local-exec" {
-    command = "${path.module}/../bin/archive_dependencies.sh"
-  }
-}
-
-
 # Archived code for extract lambda
 data "archive_file" "extract_lambda"{
     type = "zip"
@@ -33,7 +8,7 @@ data "archive_file" "extract_lambda"{
 
 # Create extract lambda
 resource "aws_lambda_function" "extract_lambda" {
-    role = resource.aws_iam_role.lambda_role.arn
+    role = aws_iam_role.lambda_role.arn
     function_name = var.extract_lambda
     s3_bucket = aws_s3_bucket.code_bucket.bucket
     s3_key = "${var.extract_lambda}/function.zip"
@@ -53,21 +28,6 @@ resource "aws_lambda_function" "extract_lambda" {
   }
 }
 
-# Lambda layer containing extract code
-resource "aws_lambda_layer_version" "lambda_layer" {
-  layer_name = "lambda-layer"
-  compatible_runtimes = ["python3.12"]
-  s3_bucket = aws_s3_bucket.code_bucket.bucket
-  s3_key = aws_s3_object.extraction_utils.key
-}
-
-
-# data "archive_file" "transform_lambda" {
-#     type = "zip"
-#     output_file_mode = "0666"
-#     source_file = "${path.module}/.."
-#     output_path = "${path.module}/../packages/transform_lambda.zip"
-# }
 
 
 
@@ -81,15 +41,6 @@ data "archive_file" "extraction_utils"{
 
 
 
-
-resource "aws_lambda_layer_version" "extraction_utils_layer" {
-  layer_name = "${var.extraction_utils}-layer"
-  compatible_runtimes = ["python3.12"]
-  s3_bucket = aws_s3_bucket.code_bucket.bucket
-  s3_key = aws_s3_object.extraction_utils.key
-}
-
-
 data "archive_file" "dependencies"{
     type = "zip"
     output_file_mode = "0666"
@@ -97,13 +48,35 @@ data "archive_file" "dependencies"{
     output_path = "${path.module}/../packages/dependencies/dependencies.zip"
 }
 
-
-
-
-resource "aws_lambda_layer_version" "dependencies_layer" {
-  layer_name = "dependencies-layer"
-  compatible_runtimes = ["python3.12"]
-  s3_bucket = aws_s3_bucket.code_bucket.bucket
-  s3_key = aws_s3_object.lambda_dependencies.key
+#transform lambda archive
+data "archive_file" "transform_lambda" {
+    type = "zip"
+    output_file_mode = "0666"
+    source_file = "${path.module}/../transformation_lambda/main.py"
+    output_path = "${path.module}/../packages/transform_lambda.zip"
 }
+
+#provision transform lambda
+resource "aws_lambda_function" "transform_lambda" {
+    role = aws_iam_role.lambda_role.arn
+    function_name = var.transform_lambda
+    s3_bucket = aws_s3_bucket.code_bucket.bucket
+    s3_key = aws_s3_object.transform_lambda.key
+    layers = [
+      # aws_lambda_layer_version.lambda_layer.arn,
+      aws_lambda_layer_version.transform_lambda_layer.arn,
+      aws_lambda_layer_version.dependencies_layer.arn
+    ]
+    handler = "${var.transform_lambda}.lambda_handler"
+    timeout = 900
+    runtime = "python3.12"
+
+    environment {
+    variables = {
+      BUCKET_TRANSFORM = aws_s3_bucket.transform_bucket.bucket
+    }
+  }
+}
+
+
 
