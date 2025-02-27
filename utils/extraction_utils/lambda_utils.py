@@ -32,7 +32,7 @@ def upload_to_s3(data, bucket_name, object_name):
 
 
 
-def create_filename(table_name):
+def create_filename(table_name, time):
     """
     Generates a filename based on the current timestamp and the provided table name.
 
@@ -43,12 +43,12 @@ def create_filename(table_name):
         str: A string representing the generated filename, formatted as
              "table_name/year/month/day/timestamp.json".
     """
-    timestamp = datetime.now().isoformat()
-    year = datetime.now().strftime("%Y")
-    month = datetime.now().strftime("%m")
-    day = datetime.now().strftime("%d")
+    # timestamp = datetime.now().isoformat()
+    # year = datetime.now().strftime("%Y")
+    # month = datetime.now().strftime("%m")
+    # day = datetime.now().strftime("%d")
 
-    filename = f"{table_name}/{year}/{month}/{day}/{timestamp}.json"
+    filename = f"{table_name}/{time}.json"
     return filename
 
 
@@ -92,7 +92,8 @@ def check_for_data(s3_client, bucket_name):
 class CustomEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, datetime):
-            return obj.isoformat()
+            #return obj.isoformat()
+            return obj.strftime("%Y/%m/%d/%H:%M")
         elif isinstance(obj, Decimal):
             return float(obj)
         return super().default(obj)
