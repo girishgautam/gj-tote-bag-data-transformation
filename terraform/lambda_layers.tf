@@ -31,17 +31,17 @@ resource "null_resource" "lambda_layer" {
 }
 
 # src transform layer
-resource "aws_lambda_layer_version" "transform_lambda_layer" {
-  layer_name = "${var.transform_lambda}-layer"
-  compatible_runtimes = ["python3.12"]
-  s3_bucket = aws_s3_bucket.code_bucket.bucket
-  s3_key = aws_s3_object.transform_lambda.key
-}
+# resource "aws_lambda_layer_version" "transform_lambda_layer" {
+#   layer_name = "${var.transform_lambda}-layer"
+#   compatible_runtimes = ["python3.12"]
+#   s3_bucket = aws_s3_bucket.code_bucket.bucket
+#   s3_key = aws_s3_object.transform_lambda.key
+# }
 
 #transform util layer
-resource "aws_lambda_layer_version" "transform_lambda_util_layer" {
-  layer_name = "${var.transform_lambda}-layer"
-  compatible_runtimes = ["python3.12"]
-  s3_bucket = aws_s3_bucket.code_bucket.bucket
-  s3_key = aws_s3_object.transform_lambda.key
-}
+# resource "aws_lambda_layer_version" "transform_lambda_util_layer" {
+#   layer_name = "${var.transform_lambda}-layer"
+#   compatible_runtimes = ["python3.12"]
+#   s3_bucket = aws_s3_bucket.code_bucket.bucket
+#   s3_key = aws_s3_object.transform_lambda.key
+# }
