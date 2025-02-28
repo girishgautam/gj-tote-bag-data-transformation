@@ -1,7 +1,7 @@
 
 
 resource "aws_lambda_layer_version" "extraction_utils_layer" {
-  layer_name = "${var.extraction_utils}-layer"
+  layer_name = "utils"
   compatible_runtimes = ["python3.12"]
   # s3_bucket = aws_s3_bucket.code_bucket.bucket
   # s3_key = aws_s3_object.extraction_utils.key
