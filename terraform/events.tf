@@ -6,10 +6,10 @@ resource "aws_cloudwatch_event_rule" "scheduler" {
   description = "trigger extraction lambda"
 }
 
-resource "aws_cloudwatch_event_target" "sns" {
-  rule      = aws_cloudwatch_event_rule.scheduler.name
-  target_id = "InvokeExtractionLambda"
-  # target id not required just a label to help identify target
+# resource "aws_cloudwatch_event_target" "sns" {
+#   rule      = aws_cloudwatch_event_rule.scheduler.name
+#   target_id = "InvokeExtractionLambda"
+#   # target id not required just a label to help identify target
 
-  arn       = aws_lambda_function.extract_lambda.arn
-}
+#   arn       = aws_lambda_function.extract_lambda.arn
+# }
