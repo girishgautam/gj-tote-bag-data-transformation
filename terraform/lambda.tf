@@ -41,6 +41,13 @@ data "archive_file" "extraction_utils"{
     output_path = "${path.module}/../packages/extraction_utils/extraction_utils.zip"
 }
 
+data "archive_file" "dependencies"{
+    type = "zip"
+    output_file_mode = "0666"
+    source_dir = "${path.module}/../dependencies/python/"
+    output_path = "${path.module}/../packages/dependencies/dependencies.zip"
+}
+
 
 
 
