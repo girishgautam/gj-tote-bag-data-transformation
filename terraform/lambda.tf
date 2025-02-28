@@ -16,7 +16,7 @@ resource "aws_lambda_function" "extract_lambda" {
       aws_lambda_layer_version.dependencies_layer.arn
     ]
     filename = data.archive_file.extract_lambda.output_path
-    handler = "${var.extract_lambda}.lambda_handler"
+    handler = "main.lambda_handler"
     timeout = 900
     runtime = "python3.12"
 
