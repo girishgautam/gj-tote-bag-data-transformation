@@ -6,6 +6,7 @@ data "archive_file" "extract_lambda"{
     output_path = "${path.module}/../packages/${var.extract_lambda}/function.zip"
 }
 
+
 # Create extract lambda
 resource "aws_lambda_function" "extract_lambda" {
     role = aws_iam_role.lambda_role.arn
