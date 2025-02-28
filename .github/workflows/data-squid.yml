@@ -58,6 +58,10 @@ jobs:
         working-directory: terraform
         run: terraform init
 
+      - name: build dependencies
+        working-directory: terraform
+        run: pip install -r ../requirements-lambda.txt -t ../dependencies/python
+
       - name: Terraform Plan
         working-directory: terraform
         run: terraform plan
