@@ -17,7 +17,7 @@ resource "aws_lambda_function" "extract_lambda" {
     ]
     filename = data.archive_file.extract_lambda.output_path
     handler = "${var.extract_lambda}.lambda_handler"
-    timeout = 895
+    timeout = 900
     runtime = "python3.12"
 
     environment {
