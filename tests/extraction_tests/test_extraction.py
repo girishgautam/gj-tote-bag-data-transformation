@@ -5,6 +5,7 @@ from utils.extraction_utils.lambda_utils import (
     upload_to_s3,
     create_filename,
     format_data_to_json,
+    get_s3_bucket_name
 )
 from datetime import datetime
 from unittest.mock import patch, MagicMock
@@ -426,3 +427,30 @@ class TestLambdaHandler:
 
         assert result["result"] == "Success"
         assert "s3://" in result["report_file"]
+
+
+class TestGetS3BucketName:
+
+    @pytest.fixture
+    def setup_s3(self):
+        with mock_aws():
+            s3 = boto3.client('s3')
+
+            s3.create_bucket(Bucket="test-prefix-123",
+             CreateBucketConfiguration={"LocationConstraint": "eu-west-2"}
+            )
+            s3.create_bucket(Bucket="test-prefix-456",
+             CreateBucketConfiguration={"LocationConstraint": "eu-west-2"}
+            )
+            s3.create_bucket(Bucket="another-bucket", 
+            CreateBucketConfiguration={"LocationConstraint": "eu-west-2"}
+            )
+            yield s3
+
+    def test_get_s3_bucket_name_found(self, setup_s3):
+        bucket_name = get_s3_bucket_name("test-prefix")
+        assert bucket_name in ["test-prefix-123", "test-prefix-456"]
+
+    def test_get_s3_bucket_name_not_found(self, setup_s3):
+        with pytest.raises(ValueError):
+            bucket_name = get_s3_bucket_name("nonexistent-prefix")
