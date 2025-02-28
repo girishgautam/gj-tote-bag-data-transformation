@@ -126,6 +126,20 @@ def format_data_to_json(rows, columns):
 
 def get_s3_bucket_name(bucket_prefix):
 
+    """
+    Retrieve the name of the  S3 bucket that starts with the specified prefix.
+    ingest_bucket_prefix - "data-squid-ingest-bucket-"
+    transform_bucket_prefix - "data-squid-transform-bucket-"
+
+    Parameters:
+    bucket_prefix (str): The prefix to match against the names of S3 buckets.
+
+    Returns:
+    str: The name of the first S3 bucket that starts with the given prefix.
+
+
+    """
+
     s3_client = boto3.client("s3")
 
     response = s3_client.list_buckets()
@@ -134,4 +148,3 @@ def get_s3_bucket_name(bucket_prefix):
             return bucket['Name']
     else:
         raise ValueError('Error: bucket prefix not found')
-    
