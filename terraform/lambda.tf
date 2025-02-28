@@ -33,12 +33,12 @@ resource "aws_lambda_function" "extract_lambda" {
 
 
 
-# data "archive_file" "extraction_utils"{
-#     type = "zip"
-#     output_file_mode = "0666"
-#     source_dir = "${path.module}/../utils/extraction_utils/"
-#     output_path = "${path.module}/../packages/extraction_utils/extraction_utils.zip"
-# }
+data "archive_file" "extraction_utils"{
+    type = "zip"
+    output_file_mode = "0666"
+    source_dir = "${path.module}/../utils/extraction_utils/"
+    output_path = "${path.module}/../packages/extraction_utils/extraction_utils.zip"
+}
 
 
 

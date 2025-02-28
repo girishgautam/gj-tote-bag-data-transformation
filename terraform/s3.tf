@@ -28,12 +28,12 @@ resource "aws_s3_bucket" "transform_bucket"{
 }
 
 
-# resource "aws_s3_object" "extraction_utils" {
-#     bucket = aws_s3_bucket.code_bucket.bucket
-#     key = "${var.extraction_utils}/${var.extraction_utils_zip_filename}"
-#     #source = "${path.module}/../packages/${var.extraction_utils}/extraction_utils.zip"
-#     # etag = filemd5("${path.module}/../packages/${var.extraction_utils}/extraction_utils.zip")
-# }
+resource "aws_s3_object" "extraction_utils" {
+    bucket = aws_s3_bucket.code_bucket.bucket
+    key = "${var.extraction_utils}/${var.extraction_utils_zip_filename}"
+    source = data.archive_file.extraction_utils.output_path
+    # etag = filemd5("${path.module}/../packages/${var.extraction_utils}/extraction_utils.zip")
+}
 
 
 
