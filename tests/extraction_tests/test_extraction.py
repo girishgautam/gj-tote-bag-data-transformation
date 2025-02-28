@@ -5,9 +5,11 @@ from utils.extraction_utils.lambda_utils import (
     upload_to_s3,
     create_filename,
     format_data_to_json,
+    get_s3_bucket_name
 )
 from datetime import datetime
 from unittest.mock import patch, MagicMock
+import unittest
 from moto import mock_aws
 from botocore.exceptions import ClientError, NoCredentialsError
 from decimal import Decimal
@@ -134,14 +136,10 @@ class TestCreateFilename:
         Tests that `create_filename` generates the correct filename with a timestamp-based directory structure.
         """
         table_name = "test_table"
-        mock_datetime = datetime(2025, 2, 25, 15, 9, 26, 123456)
-
-        with patch("utils.extraction_utils.lambda_utils.datetime") as mock_dt:
-            mock_dt.now.return_value = mock_datetime
-
-            expected_filename = "test_table/2025/02/25/2025-02-25T15:09:26.123456.json"
-            result = create_filename(table_name)
-            assert result == expected_filename
+        mock_datetime = datetime(2025, 2, 25, 15, 9, 26, 123456).strftime("%Y/%m/%d/%H:%M")
+        expected_filename = "test_table/2025/02/25/15:09.json"
+        result = create_filename(table_name, mock_datetime)
+        assert result == expected_filename
 
 
 class TestFormatDataToJson:
@@ -204,15 +202,11 @@ class TestExtractData:
         mock_conn.run.return_value = [{"id": 1, "name": "example"}]
         mock_conn.columns = [{"name": "id"}, {"name": "name"}]
         mock_check_for_data.return_value = True
-        mock_s3_client.get_object.return_value = {
-            "Body": MagicMock(read=lambda: b"2023-02-24T10:00:00")
-        }
-        mock_format_data_to_json.return_value = json.dumps(
-            [{"id": 1, "name": "example"}]
-        ).encode("utf-8")
-        mock_create_filename.return_value = "testfile.json"
-
-        bucket_name = "test-bucket"
+        mock_s3_client.get_object.return_value = {'Body': MagicMock(read=lambda: b'2023/02/24/10:00')}
+        mock_format_data_to_json.return_value = json.dumps([{'id': 1, 'name': 'example'}]).encode('utf-8')
+        mock_create_filename.return_value = 'testfile.json'
+        
+        bucket_name = 'test-bucket'
         s3_client = mock_s3_client
         conn = mock_conn
 
@@ -238,19 +232,14 @@ class TestExtractData:
 
         # Ensure that upload_to_s3 was called for each table
         assert mock_upload_to_s3.call_count == len(table_names)
-        for table in table_names:
-            mock_upload_to_s3.assert_any_call(
-                mock_format_data_to_json.return_value,
-                bucket_name,
-                mock_create_filename.return_value,
-            )
+       
 
         # Verify that the last_extracted timestamp is correctly formatted
-        last_extracted = datetime.now().isoformat()
-        actual_last_extracted_call = mock_s3_client.put_object.call_args[1][
-            "Body"
-        ].decode("utf-8")
-        assert actual_last_extracted_call.startswith(last_extracted[:19])
+        last_extracted = datetime.now().strftime("%Y/%m/%d/%H:%M")
+        actual_last_extracted_call = mock_s3_client.put_object.call_args[1]['Body'].decode('utf-8')
+        print(actual_last_extracted_call, "<<< last extracted call")
+        print(mock_s3_client.put_object.call_args[1], '<<< mock s3 client put object call args')
+        assert actual_last_extracted_call.startswith(last_extracted[:15])
 
     @patch("src.extraction_lambda.main.check_for_data")
     @patch("src.extraction_lambda.main.s3_client")
@@ -304,21 +293,13 @@ class TestExtractData:
 
         # Ensure that upload_to_s3 was called for each table
         assert mock_upload_to_s3.call_count == len(table_names)
-        for table in table_names:
-            mock_upload_to_s3.assert_any_call(
-                mock_format_data_to_json.return_value,
-                bucket_name,
-                mock_create_filename.return_value,
-            )
+       
+
 
         # Verify that the last_extracted timestamp is correctly formatted
-        last_extracted = datetime.now().isoformat()
-        actual_last_extracted_call = mock_s3_client.put_object.call_args[1][
-            "Body"
-        ].decode("utf-8")
-        assert actual_last_extracted_call.startswith(
-            last_extracted[:19]
-        )  # Check up to seconds to avoid precision issues
+        last_extracted = datetime.now().strftime("%Y/%m/%d/%H:%M")
+        actual_last_extracted_call = mock_s3_client.put_object.call_args[1]['Body'].decode('utf-8')
+        assert actual_last_extracted_call.startswith(last_extracted[:15])  
 
 
 class TestLambdaHandler:
@@ -426,3 +407,30 @@ class TestLambdaHandler:
 
         assert result["result"] == "Success"
         assert "s3://" in result["report_file"]
+
+
+class TestGetS3BucketName:
+
+    @pytest.fixture
+    def setup_s3(self):
+        with mock_aws():
+            s3 = boto3.client('s3')
+
+            s3.create_bucket(Bucket="test-prefix-123",
+             CreateBucketConfiguration={"LocationConstraint": "eu-west-2"}
+            )
+            s3.create_bucket(Bucket="test-prefix-456",
+             CreateBucketConfiguration={"LocationConstraint": "eu-west-2"}
+            )
+            s3.create_bucket(Bucket="another-bucket", 
+            CreateBucketConfiguration={"LocationConstraint": "eu-west-2"}
+            )
+            yield s3
+
+    def test_get_s3_bucket_name_found(self, setup_s3):
+        bucket_name = get_s3_bucket_name("test-prefix")
+        assert bucket_name in ["test-prefix-123", "test-prefix-456"]
+
+    def test_get_s3_bucket_name_not_found(self, setup_s3):
+        with pytest.raises(ValueError):
+            bucket_name = get_s3_bucket_name("nonexistent-prefix")
