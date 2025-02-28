@@ -11,10 +11,7 @@ data "archive_file" "extract_lambda"{
 resource "aws_lambda_function" "extract_lambda" {
     role = aws_iam_role.lambda_role.arn
     function_name = var.extract_lambda
-    #s3_bucket = aws_s3_bucket.code_bucket.bucket
-    #s3_key = "${var.extract_lambda}/function.zip"
     layers = [
-    #   aws_lambda_layer_version.lambda_layer.arn,
       aws_lambda_layer_version.extraction_utils_layer.arn,
       aws_lambda_layer_version.dependencies_layer.arn
     ]
