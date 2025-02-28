@@ -49,7 +49,7 @@ data "aws_iam_policy_document" "cloudwatch-policy" {
     resources = [
       "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:/aws/lambda/${var.extract_lambda}:*"
     ]
-    actions = ["Logs:CreatesLogGroup"]
+    actions = ["Logs:CreateLogGroup"]
   }
   statement {
     effect = "Allow"
