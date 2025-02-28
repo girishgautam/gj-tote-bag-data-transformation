@@ -85,7 +85,7 @@ def extract_data(s3_client, conn, bucket_name):
             print(f"{table} last extraction date: {last_extracted}")
             query = f"SELECT * FROM {table} WHERE last_updated > '{last_extracted};'"
             extraction_type = 'Continuous extraction'
-            
+
         else:
             query = f"SELECT * FROM {table};"
             s3_client.put_object(Bucket=bucket_name, Key=f'{table}/last_extracted.txt', Body=timestamp_for_last_extracted)
@@ -103,14 +103,14 @@ def extract_data(s3_client, conn, bucket_name):
             upload_to_s3(data=data_json, bucket_name=bucket_name, object_name=filename)
             extracted_tables.append(table)
 
-    
+
 
     if extracted_tables:
         return extraction_type, f"Tables extracted - {extracted_tables}"
     else:
         return 'No updates in the database, No Tables extracted'
-    
-    
+
+
 
 
 def lambda_handler(event, context):
