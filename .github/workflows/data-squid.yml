@@ -2,7 +2,7 @@ name: data-squid-de-tote-bag-data-transformation
 
 on:
   push:
-  #pull_request:
+  pull_request:
     branches:
         - main
         - develop
