@@ -73,13 +73,13 @@ resource "aws_iam_role_policy_attachment" "extract-lambda-cloudwatch" {
   policy_arn = aws_iam_policy.cloudwatch-policy.arn
 }
 
-# resource "aws_lambda_permission" "extract_lambda" {
-#   statement_id = "AllowExecutionFromCloudwatch"
-#   action = "lambda:InvocationFunction"
-#   principal = "events.amazonaws.com"
-#   function_name = aws_lambda_function.extract_lambda.function_name
-#   # source_arn = ""
-# }
+resource "aws_lambda_permission" "extract_lambda" {
+  statement_id = "AllowExecutionFromCloudwatch"
+  action = "lambda:InvocationFunction"
+  principal = "events.amazonaws.com"
+  function_name = aws_lambda_function.extract_lambda.function_name
+  source_arn = aws_cloudwatch_event_rule.scheduler.arn
+}
 
 
 
