@@ -123,3 +123,15 @@ def format_data_to_json(rows, columns):
     json_buffer.seek(0)
 
     return json_buffer.getvalue().encode('utf-8')
+
+def get_s3_bucket_name(bucket_prefix):
+
+    s3_client = boto3.client("s3")
+
+    response = s3_client.list_buckets()
+    for bucket in response["Buckets"]:
+        if bucket['Name'].startswith(bucket_prefix):
+            return bucket['Name']
+    else:
+        raise ValueError('Error: bucket prefix not found')
+    
