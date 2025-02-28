@@ -29,8 +29,8 @@ resource "aws_lambda_function" "extract_lambda" {
 data "archive_file" "extraction_utils"{
     type = "zip"
     output_file_mode = "0666"
-    source_file = "${path.module}/../utils/extraction_utils/lambda_utils.py"
-    output_path = "${path.module}/../packages/extraction_utils/extraction_utils.zip"
+    source_file = "${path.module}/../utils"
+    output_path = "${path.module}/../packages/extraction_utils/utils.zip"
 }
 
 data "archive_file" "dependencies"{
