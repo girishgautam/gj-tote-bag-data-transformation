@@ -92,8 +92,8 @@ def check_for_data(s3_client, bucket_name):
 class CustomEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, datetime):
-            #return obj.isoformat()
-            return obj.strftime("%Y/%m/%d/%H:%M")
+            return obj.isoformat()
+            #return obj.strftime("%Y/%m/%d/%H:%M")
         elif isinstance(obj, Decimal):
             return float(obj)
         return super().default(obj)
