@@ -16,7 +16,7 @@ resource "aws_lambda_function" "extract_lambda" {
     layers = [
     #   aws_lambda_layer_version.lambda_layer.arn,
       aws_lambda_layer_version.extraction_utils_layer.arn,
-    #   aws_lambda_layer_version.dependencies_layer.arn
+      aws_lambda_layer_version.dependencies_layer.arn
     ]
     filename = data.archive_file.extract_lambda.output_path
     handler = "${var.extract_lambda}.lambda_handler"

@@ -13,12 +13,12 @@ resource "aws_lambda_layer_version" "extraction_utils_layer" {
   s3_key = aws_s3_object.extraction_utils.key
 }
 
-# resource "aws_lambda_layer_version" "dependencies_layer" {
-#   layer_name = "dependencies-layer"
-#   compatible_runtimes = ["python3.12"]
-#   s3_bucket = aws_s3_bucket.code_bucket.bucket
-#   s3_key = aws_s3_object.lambda_dependencies.key
-# }
+resource "aws_lambda_layer_version" "dependencies_layer" {
+  layer_name = "dependencies-layer"
+  compatible_runtimes = ["python3.12"]
+  s3_bucket = aws_s3_bucket.code_bucket.bucket
+  s3_key = aws_s3_object.lambda_dependencies.key
+}
 
 # resource "null_resource" "lambda_layer" {
 #   triggers = {
