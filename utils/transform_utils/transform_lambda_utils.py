@@ -15,9 +15,10 @@ def convert_json_to_df_from_s3(table, bucket_name):
     df = pd.read_json(json_file_io)
     return df
 
-# bucket_name = get_s3_bucket_name("data-squid-ingest-bucket-")
+bucket_name = get_s3_bucket_name("data-squid-ingest-bucket-")
 
-# df_staff = convert_json_to_df_from_s3('staff', bucket_name)
+df_currency = convert_json_to_df_from_s3('currency', bucket_name)
+print(df_currency.head()) #['currency_code'].unique()
 # df_department = convert_json_to_df_from_s3('department', bucket_name)
 
 
@@ -75,7 +76,8 @@ def dim_staff(df_1, df_2):
     """
     try:
         dim_staff_df = pd.merge(df_1, df_2, on='department_id', how='inner')
-        dim_staff_df = dim_staff_df[['first_name', 'last_name', 'department_name', 'location', 'email_address']]
+        dim_staff_df = dim_staff_df[['staff_id', 'first_name', 'last_name', 'department_name', 'location', 'email_address']]
+
         return dim_staff_df
     except KeyError:
         raise
@@ -89,22 +91,20 @@ def dim_location(df):
 
 
 
-bucket_name = "data-squid-ingest-bucket-20250225123034817500000001"
-df1 = convert_json_to_df_from_s3('address', bucket_name)
-df2 = convert_json_to_df_from_s3('counterparty', bucket_name)
+# bucket_name = "data-squid-ingest-bucket-20250225123034817500000001"
+# df1 = convert_json_to_df_from_s3('address', bucket_name)
+# df2 = convert_json_to_df_from_s3('counterparty', bucket_name)
 
 def dim_counterparty(df1, df2):
     return df2
 
 
 
+def dim_currency(df):
+    dim_currency = df
+    currency_map = {'GBP' : 'British Pound', 'USD' : 'US Dollar', 'EUR' : 'Euro'}
+    dim_currency['currency_name'] = dim_currency['currency_code'].map(currency_map)
+    dim_currency.drop(columns=['last_updated', 'created_at'], inplace=True)
 
-
-
-
-
-
-
-
-print(dim_counterparty(df1, df2))
+    return dim_currency
 
