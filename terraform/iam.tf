@@ -32,8 +32,8 @@ data "aws_iam_policy_document" "read_write_s3" {
     ]
 
     resources = [
-        aws_s3_bucket.ingest_bucket.arn,
-        aws_s3_bucket.transform_bucket.arn
+        "${aws_s3_bucket.ingest_bucket.arn}/*",
+        "${aws_s3_bucket.transform_bucket.arn}/*"
     ]
   
 }
