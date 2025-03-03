@@ -11,6 +11,15 @@ data "aws_iam_policy_document" "assume_role_policy" {
   
 }
 }
+
+resource "aws_iam_role" "lambda_role" {
+    name_prefix = "data-squid-lambda"
+    assume_role_policy = data.aws_iam_policy_document.assume_role_policy.json
+}
+
+
+# Lambda permissions to S3
+
 data "aws_iam_policy_document" "read_write_s3" {
   statement {
     actions = ["s3:PutObject", "s3:GetObject", "s3:ListBucket"]
@@ -23,13 +32,6 @@ data "aws_iam_policy_document" "read_write_s3" {
 }
 }
 
-
-resource "aws_iam_role" "lambda_role" {
-    name_prefix = "data-squid-lambda"
-    assume_role_policy = data.aws_iam_policy_document.assume_role_policy.json
-}
-
-
 resource "aws_iam_policy" "read_write_s3" {
   name_prefix = "s3-policy-lambda-"
   policy      = data.aws_iam_policy_document.read_write_s3.json
@@ -38,6 +40,32 @@ resource "aws_iam_policy" "read_write_s3" {
 resource "aws_iam_role_policy_attachment" "lambda_s3_policy_attachment" {
   role       = aws_iam_role.lambda_role.name
   policy_arn = aws_iam_policy.read_write_s3.arn
+}
+
+
+# Lambda permissions to Secrets Manager
+
+data "aws_iam_policy_document" "read_secretsmanager" {  
+  statement {
+    effect = "Allow"
+    actions = [
+      "secretsmanager:GetSecretValue",
+      "secretsmanager:DescribeSecret"
+    ]
+    resources = [
+      "arn:aws:secretsmanager:eu-west-2:195275662632:secret:totesys_database-RBM0fV"
+    ]  
+  }
+}
+
+resource "aws_iam_policy" "read_secretsmanager" {
+  name_prefix = "data-squid-read-secretsmanager"
+  policy = data.aws_iam_policy_document.read_secretsmanager.json
+}
+
+resource "aws_iam_role_policy_attachment" "read_secretsmanager" {
+  role       = aws_iam_role.lambda_role.name
+  policy_arn = aws_iam_policy.read_secretsmanager.arn
 }
 
 
