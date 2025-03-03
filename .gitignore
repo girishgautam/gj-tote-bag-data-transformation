@@ -18,4 +18,6 @@ venv/
 terraform/init.sh
 zen.txt
 *.tfstate*
-dependencies
+dependencies/
+packages/
+utils_layer/

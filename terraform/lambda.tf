@@ -6,7 +6,6 @@ data "archive_file" "extract_lambda"{
     output_path = "${path.module}/../packages/${var.extract_lambda}/function.zip"
 }
 
-
 # Create extract lambda
 resource "aws_lambda_function" "extract_lambda" {
     role = aws_iam_role.lambda_role.arn
@@ -16,8 +15,8 @@ resource "aws_lambda_function" "extract_lambda" {
       aws_lambda_layer_version.dependencies_layer.arn
     ]
     filename = data.archive_file.extract_lambda.output_path
-    handler = "${var.extract_lambda}.lambda_handler"
-    timeout = 900
+    handler = "main.lambda_handler"
+    timeout = 899
     runtime = "python3.12"
 
     environment {
@@ -27,23 +26,19 @@ resource "aws_lambda_function" "extract_lambda" {
   }
 }
 
+# data "archive_file" "extraction_utils"{
+#     type = "zip"
+#     output_file_mode = "0666"
+#     source_dir = "${path.module}/../utils"
+#     output_path = "${path.module}/../packages/extraction_utils/utils.zip"
+# }
 
-
-
-
-data "archive_file" "extraction_utils"{
-    type = "zip"
-    output_file_mode = "0666"
-    source_dir = "${path.module}/../utils/extraction_utils/"
-    output_path = "${path.module}/../packages/extraction_utils/extraction_utils.zip"
-}
-
-data "archive_file" "dependencies"{
-    type = "zip"
-    output_file_mode = "0666"
-    source_dir = "${path.module}/../dependencies/python/"
-    output_path = "${path.module}/../packages/dependencies/dependencies.zip"
-}
+# data "archive_file" "dependencies"{
+#     type = "zip"
+#     output_file_mode = "0666"
+#     source_dir = "${path.module}/../dependencies/python/"
+#     output_path = "${path.module}/../packages/dependencies/dependencies.zip"
+# }
 
 
 
