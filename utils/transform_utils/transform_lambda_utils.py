@@ -14,10 +14,6 @@ def convert_json_to_df_from_s3(table, bucket_name):
     df = pd.read_json(json_file_io)
     return df
 
-# bucket_name = "data-squid-ingest-bucket-20250225123034817500000001"
-
-# df_design = convert_json_to_df_from_s3('design', bucket_name)
-
 
 def dim_design(df):
 
@@ -27,4 +23,32 @@ def dim_design(df):
 
     return dim_design
 
-print(dim_design(df_design))
+
+def dim_location(df):
+
+    dim_location = df[['address_id', 'address_line_1', 'address_line_2', 'district', 'city', 'postal_code', 'country', 'phone']]
+    dim_location.rename(columns={'address_id': 'location_id'}, inplace=True)
+
+    return dim_location
+
+
+
+bucket_name = "data-squid-ingest-bucket-20250225123034817500000001"
+df1 = convert_json_to_df_from_s3('address', bucket_name)
+df2 = convert_json_to_df_from_s3('counterparty', bucket_name)
+
+def dim_counterparty(df1, df2):
+    return df2
+
+
+
+
+
+
+
+
+
+
+
+print(dim_counterparty(df1, df2))
+
