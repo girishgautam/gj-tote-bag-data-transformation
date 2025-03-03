@@ -21,73 +21,29 @@ resource "aws_iam_role" "lambda_role" {
 # Lambda permissions to S3
 
 data "aws_iam_policy_document" "read_write_s3" {
-		statement {
-      sid = "VisualEditor0"
-      effect = "Allow"
-      actions = [
-        "s3:PutObject",
-        "s3:GetObject"
-      ]
-      resources = [
-        "${aws_s3_bucket.ingest_bucket.arn}/*",
-        "${aws_s3_bucket.transform_bucket.arn}/*"
-      ]
-		}
-		statement {
-			sid = "VisualEditor1"
-			effect = "Allow"
-			actions = ["s3:ListBucket"]
-			resources = [
-        "${aws_s3_bucket.ingest_bucket.arn}/*",
-        "${aws_s3_bucket.transform_bucket.arn}/*"
-			]
-		}
-		statement {
-			sid = "VisualEditor2"
-			effect = "Allow"
-			actions = [
-				"s3-object-lambda:List*",
-				"s3-object-lambda:Get*",
-				"s3-object-lambda:Put*"
-			]
-			resources = [
-        "${aws_s3_bucket.ingest_bucket.arn}/*",
-        "${aws_s3_bucket.transform_bucket.arn}/*"
-			]
-		}
-		statement {
-			sid = "VisualEditor3"
-			effect = "Allow"
-			actions = ["s3:ListAllMyBuckets"]
-			resources = [
-        "${aws_s3_bucket.ingest_bucket.arn}/*",
-        "${aws_s3_bucket.transform_bucket.arn}/*"
-			]
-		}
-
-    # statement {
-    #   effect = "Allow"
-    #   actions = [
-    #     "s3:Describe*",
-    #     "s3:Get*",
-    #     "s3:List*",
-    #     "s3:Put*",
-    #     "s3-object-lambda:Get*",
-    #     "s3-object-lambda:List*",
-    #     "s3-object-lambda:Put*"
-    #   ]
-    #   resources = [
-    #       "*"
-    #       # ClientError: "errorMessage": "An error occurred (AccessDenied)
-    #       # when calling the ListBuckets operation: User:
-    #       # arn:aws:sts::195275662632:assumed-role/data-squid-lambda20250225122007303900000001/extract_lambda
-    #       # is not authorized to perform: s3:ListAllMyBuckets because no
-    #       # identity-based policy allows the s3:ListAllMyBuckets action"
-    #       #
-    #       # "${aws_s3_bucket.ingest_bucket.arn}/*",
-    #       # "${aws_s3_bucket.transform_bucket.arn}/*"
-    #   ]
-    # }
+  statement {
+    effect = "Allow"
+    actions = [
+      "s3:Describe*",
+      "s3:Get*",
+      "s3:List*",
+      "s3:Put*",
+      "s3-object-lambda:Get*",
+      "s3-object-lambda:List*",
+      "s3-object-lambda:Put*"
+    ]
+    resources = [
+        "*"
+        # # ClientError: "errorMessage": "An error occurred (AccessDenied)
+        # # when calling the ListBuckets operation: User:
+        # # arn:aws:sts::195275662632:assumed-role/data-squid-lambda20250225122007303900000001/extract_lambda
+        # # is not authorized to perform: s3:ListAllMyBuckets because no
+        # # identity-based policy allows the s3:ListAllMyBuckets action"
+        # #
+        # "${aws_s3_bucket.ingest_bucket.arn}/*",
+        # "${aws_s3_bucket.transform_bucket.arn}/*"
+    ]
+  }
 }
 
 resource "aws_iam_policy" "read_write_s3" {
