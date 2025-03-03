@@ -28,7 +28,10 @@ data "aws_iam_policy_document" "read_write_s3" {
       "s3:PutObject",
       "s3:GetObject",
       "s3:ListBucket",
-      "s3:ListAllMyBuckets"
+      "s3:ListAllMyBuckets",
+      "s3-object-lambda:Get*",
+      "s3-object-lambda:List*",
+      "s3-object-lambda:Put*"
     ]
 
     resources = [
