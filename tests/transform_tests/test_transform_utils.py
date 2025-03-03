@@ -1,9 +1,15 @@
 from moto import mock_aws
-from utils.transform_utils.transform_lambda_utils import get_file
-from utils.extraction_utils.lambda_utils import format_data_to_json, create_filename, upload_to_s3
+from utils.transform_utils.transform_lambda_utils import\
+    convert_json_to_df_from_s3,\
+        dim_design,\
+            dim_staff
+from utils.extraction_utils.lambda_utils import format_data_to_json,\
+    create_filename,\
+        upload_to_s3
 import boto3
 import pytest
 import os
+import pandas as pd
 from datetime import datetime
 from decimal import Decimal
 
@@ -35,4 +41,151 @@ def aws_credentials():
 #             return_val = get_file(table='test_table', bucket_name='TestBucket')
 #             print(return_val)
 #             assert return_val == [{'id': 1, 'name': 'Alice', 'timestamp': '2025-02-26T14:33:00', 'amount': 100.0}, {'id': 2, 'name': 'Bob', 'timestamp': '2025-02-27T15:40:00', 'amount': 200.5}]
-           
+
+
+class TestDimDesign:
+
+    def test_dim_design_with_valid_input(self):
+        """
+        Test dim_design with a valid input DataFrame containing the required columns.
+        """
+        data = {
+            'design_id': [1, 2, 3],
+            'design_name': ['Design A', 'Design B', 'Design C'],
+            'file_location': ['/path/a', '/path/b', '/path/c'],
+            'file_name': ['file_a', 'file_b', 'file_c'],
+            'extra_column': [10, 20, 30]  # Extra column to verify it is excluded.
+        }
+        df = pd.DataFrame(data)
+
+        result = dim_design(df)
+
+        expected_data = {
+            'design_id': [1, 2, 3],
+            'design_name': ['Design A', 'Design B', 'Design C'],
+            'file_location': ['/path/a', '/path/b', '/path/c'],
+            'file_name': ['file_a', 'file_b', 'file_c']
+        }
+        expected_df = pd.DataFrame(expected_data)
+
+        pd.testing.assert_frame_equal(result, expected_df)
+        assert isinstance(result, pd.DataFrame)
+
+    def test_dim_design_missing_columns(self):
+        """
+        Test dim_design with a DataFrame missing some required columns to ensure it raises an error.
+        """
+        data = {
+            'design_id': [1, 2, 3],
+            'design_name': ['Design A', 'Design B', 'Design C']
+        }
+        df = pd.DataFrame(data)
+
+        with pytest.raises(KeyError):
+            dim_design(df)
+
+    def test_dim_design_empty_dataframe(self):
+        """
+        Test dim_design with an empty DataFrame to ensure it returns an empty DataFrame with the correct columns.
+        """
+        df = pd.DataFrame(columns=['design_id', 'design_name', 'file_location', 'file_name'])
+
+        result = dim_design(df)
+
+        expected_df = pd.DataFrame(columns=['design_id', 'design_name', 'file_location', 'file_name'])
+
+        pd.testing.assert_frame_equal(result, expected_df)
+
+
+class TestDimStaff:
+
+    def test_dim_staff_valid_input(self):
+        """
+        Test dim_staff with valid input DataFrames to ensure it merges correctly.
+        """
+        staff_data = {
+            'department_id': [1, 2],
+            'first_name': ['Alice', 'Bob'],
+            'last_name': ['Smith', 'Johnson'],
+            'email_address': ['alice@example.com', 'bob@example.com']
+        }
+        department_data = {
+            'department_id': [1, 2],
+            'department_name': ['HR', 'Engineering'],
+            'location': ['New York', 'London']
+        }
+
+        staff_df = pd.DataFrame(staff_data)
+        department_df = pd.DataFrame(department_data)
+
+        result = dim_staff(staff_df, department_df)
+
+        expected_data = {
+            'first_name': ['Alice', 'Bob'],
+            'last_name': ['Smith', 'Johnson'],
+            'department_name': ['HR', 'Engineering'],
+            'location': ['New York', 'London'],
+            'email_address': ['alice@example.com', 'bob@example.com']
+        }
+        expected_df = pd.DataFrame(expected_data)
+
+        pd.testing.assert_frame_equal(result, expected_df)
+
+    def test_dim_staff_missing_columns(self):
+        """
+        Test dim_staff with a missing column in the input DataFrames to ensure it raises KeyError.
+        """
+        staff_data = {
+            'department_id': [1, 2],
+            'first_name': ['Alice', 'Bob'],
+            'email_address': ['alice@example.com', 'bob@example.com']  # 'last_name' is missing.
+        }
+        department_data = {
+            'department_id': [1, 2],
+            'department_name': ['HR', 'Engineering'],
+            'location': ['New York', 'London']
+        }
+
+        staff_df = pd.DataFrame(staff_data)
+        department_df = pd.DataFrame(department_data)
+
+        with pytest.raises(KeyError):
+            dim_staff(staff_df, department_df)
+
+    def test_dim_staff_empty_dataframes(self):
+        """
+        Test dim_staff with empty input DataFrames to ensure it returns an empty DataFrame with the correct columns.
+        """
+        staff_df = pd.DataFrame(columns=['department_id', 'first_name', 'last_name', 'email_address'])
+        department_df = pd.DataFrame(columns=['department_id', 'department_name', 'location'])
+
+        result = dim_staff(staff_df, department_df)
+
+        expected_df = pd.DataFrame(columns=['first_name', 'last_name', 'department_name', 'location', 'email_address'])
+
+        pd.testing.assert_frame_equal(result, expected_df)
+
+    def test_dim_staff_no_matching_department_ids(self):
+        """
+        Test dim_staff with no matching 'department_id' between the DataFrames to ensure it returns an empty DataFrame.
+        """
+        staff_data = {
+            'department_id': [1],
+            'first_name': ['Alice'],
+            'last_name': ['Smith'],
+            'email_address': ['alice@example.com']
+        }
+        department_data = {
+            'department_id': [2], 
+            'department_name': ['Engineering'],
+            'location': ['London']
+        }
+
+        staff_df = pd.DataFrame(staff_data)
+        department_df = pd.DataFrame(department_data)
+
+        result = dim_staff(staff_df, department_df)
+
+        expected_df = pd.DataFrame(columns=['first_name', 'last_name', 'department_name', 'location', 'email_address'])
+
+        pd.testing.assert_frame_equal(result, expected_df)
