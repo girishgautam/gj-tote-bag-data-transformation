@@ -2,6 +2,7 @@
 
 data "aws_iam_policy_document" "assume_role_policy" {
   statement {
+    effect = "Allow"
     actions = ["sts:AssumeRole"]
 
     principals {
@@ -22,6 +23,7 @@ resource "aws_iam_role" "lambda_role" {
 
 data "aws_iam_policy_document" "read_write_s3" {
   statement {
+    effect = "Allow"
     actions = [
       "s3:PutObject",
       "s3:GetObject",
@@ -121,6 +123,7 @@ resource "aws_lambda_permission" "extract_lambda" {
 data "aws_iam_policy_document" "ingestion_sns_topic_policy" {
 
   statement {
+    effect = "Allow"
     actions = [
       "SNS:Subscribe",
       "SNS:Receive"
@@ -133,8 +136,6 @@ data "aws_iam_policy_document" "ingestion_sns_topic_policy" {
         195275662632
       ]
     }
-
-    effect = "Allow"
 
     principals {
       type        = "AWS"
