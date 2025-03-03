@@ -9,8 +9,7 @@ data "aws_iam_policy_document" "assume_role_policy" {
       type        = "Service"
       identifiers = ["lambda.amazonaws.com"]
     }
-  
-}
+  }
 }
 
 resource "aws_iam_role" "lambda_role" {
@@ -33,13 +32,11 @@ data "aws_iam_policy_document" "read_write_s3" {
       "s3-object-lambda:List*",
       "s3-object-lambda:Put*"
     ]
-
     resources = [
         "${aws_s3_bucket.ingest_bucket.arn}/*",
         "${aws_s3_bucket.transform_bucket.arn}/*"
     ]
-  
-}
+  }
 }
 
 resource "aws_iam_policy" "read_write_s3" {
@@ -118,7 +115,6 @@ resource "aws_lambda_permission" "extract_lambda" {
   function_name = aws_lambda_function.extract_lambda.function_name
   source_arn = aws_cloudwatch_event_rule.scheduler.arn
 }
-
 
 
 #create iam for sns
