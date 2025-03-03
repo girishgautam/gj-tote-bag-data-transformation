@@ -36,7 +36,7 @@ data "aws_iam_policy_document" "read_write_s3" {
 		statement {
 			sid = "VisualEditor1"
 			effect = "Allow"
-			actions = "s3:ListBucket"
+			actions = ["s3:ListBucket"]
 			resources = [
         "${aws_s3_bucket.ingest_bucket.arn}/*",
         "${aws_s3_bucket.transform_bucket.arn}/*"
@@ -58,7 +58,7 @@ data "aws_iam_policy_document" "read_write_s3" {
 		statement {
 			sid = "VisualEditor3"
 			effect = "Allow"
-			actions = "s3:ListAllMyBuckets"
+			actions = ["s3:ListAllMyBuckets"]
 			resources = [
         "${aws_s3_bucket.ingest_bucket.arn}/*",
         "${aws_s3_bucket.transform_bucket.arn}/*"
