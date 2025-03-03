@@ -5,7 +5,9 @@ from utils.transform_utils.transform_lambda_utils import (
     dim_staff,
     dim_location,
     dim_currency,
+    dim_counterparty
 )
+
 from utils.extraction_utils.lambda_utils import (
     format_data_to_json,
     create_filename,
@@ -119,8 +121,8 @@ class TestDimLocation:
                 table="test_table", bucket_name="TestBucket"
             )
             location = dim_location(return_val)
-            print(location)
-            assert location["location_id"][0] == 1
+           
+            assert location['location_id'][0] == 1
             assert type(location) == pd.core.frame.DataFrame
             assert location["address_line_1"][0] == "6826 Herzog Via"
 
@@ -345,3 +347,43 @@ class TestDimCurrency:
         expected_df = pd.DataFrame(columns=['currency_code', 'currency_name'])
 
         pd.testing.assert_frame_equal(result.reset_index(drop=True), expected_df.reset_index(drop=True))
+
+class TestDimCounterparty:
+    def test_dim_counterparty_returns_dataframe(self):
+        address_rows = [
+            (15, '6826 Herzog Via', None, 'Avon', 'New Patienceburgh', '28441', 'Turkey', '1803 637401'),
+            (28, '179 Alexie Cliffs', None, None, 'Aliso Viejo', '99305-7380', 'San Marino', '9621 880720')
+        ]
+        address_columns = ['address_id', 'address_line_1', 'address_line_2', 'district', 'city', 'postal_code', 'country', 'phone']
+        counterparty_rows = [
+            (1, 'Fahey and Sons', 15, 'Micheal Toy', 'Mrs. Lucy Runolfsdottir'),
+            (2, 'Leannon, Predovic and Morar', 28, 'Melba Sanford', 'Jean Hane III')
+        ]
+        counterparty_columns = ['counterparty_id', 'counterparty_legal_name', 'legal_address_id', 'commercial_contact', 'delivery_contact']
+        
+        with mock_aws():
+            s3_client = boto3.client('s3')
+            s3_client.create_bucket(Bucket='TestBucket', CreateBucketConfiguration={'LocationConstraint': 'eu-west-2'})
+            
+            address_result = format_data_to_json(address_rows, address_columns)
+            counterparty_result = format_data_to_json(counterparty_rows, counterparty_columns)
+            
+            timestamp_for_filename = datetime.now().strftime("%Y/%m/%d/%H:%M")
+            timestamp_for_last_extracted = timestamp_for_filename.encode("utf-8")
+            s3_client.put_object(Bucket='TestBucket', Key=f'test_address/last_extracted.txt', Body=timestamp_for_last_extracted)
+            s3_client.put_object(Bucket='TestBucket', Key=f'test_counterparty/last_extracted.txt', Body=timestamp_for_last_extracted)
+
+            address_filename = create_filename(table_name='test_address', time=timestamp_for_filename)
+            counterparty_filename = create_filename(table_name='test_counterparty', time=timestamp_for_filename)
+           
+            upload_to_s3(data=address_result, bucket_name='TestBucket', object_name=address_filename)
+            upload_to_s3(data=counterparty_result, bucket_name='TestBucket', object_name=counterparty_filename)
+
+            address_return_val = convert_json_to_df_from_s3(table='test_address', bucket_name='TestBucket')
+            counterparty_return_val = convert_json_to_df_from_s3(table='test_counterparty', bucket_name='TestBucket')
+            
+            dim_counterparty_result = dim_counterparty(address_return_val, counterparty_return_val)
+
+            assert dim_counterparty_result['counterparty_id'][0] == 1
+            assert type(dim_counterparty_result) == pd.core.frame.DataFrame
+            assert dim_counterparty_result['counterparty_legal_address_line_1'][0] == '6826 Herzog Via'

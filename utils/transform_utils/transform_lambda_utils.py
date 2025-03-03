@@ -3,6 +3,7 @@ import json
 import pandas as pd
 import io
 from utils.extraction_utils.lambda_utils import get_s3_bucket_name
+from pprint import pprint
 
 
 def convert_json_to_df_from_s3(table, bucket_name):
@@ -91,13 +92,13 @@ def dim_location(df):
 
 
 
-# bucket_name = "data-squid-ingest-bucket-20250225123034817500000001"
-# df1 = convert_json_to_df_from_s3('address', bucket_name)
-# df2 = convert_json_to_df_from_s3('counterparty', bucket_name)
-
 def dim_counterparty(df1, df2):
-    return df2
+    
+    dim_counterparty = df1.merge(df2, left_on='address_id', right_on='legal_address_id')
+    dim_counterparty = dim_counterparty[['counterparty_id', 'counterparty_legal_name', 'address_line_1', 'address_line_2', 'district', 'city', 'postal_code', 'country', 'phone']]
+    dim_counterparty.rename(columns={'address_line_1': 'counterparty_legal_address_line_1', 'address_line_2': 'counterparty_legal_address_line_2', 'district': 'counterparty_legal_district', 'city': 'counterparty_legal_city', 'postal_code': 'counterparty_legal_postal_code', 'country': 'counterparty_legal_country', 'phone': 'counterparty_legal_phone_number'}, inplace=True)
 
+    return dim_counterparty
 
 
 def dim_currency(df):

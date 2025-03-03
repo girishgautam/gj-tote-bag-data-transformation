@@ -60,7 +60,20 @@ jobs:
 
       - name: build dependencies
         working-directory: terraform
-        run: pip install -r ../requirements-lambda.txt -t ../dependencies/python
+        run: | 
+             pip install -r ../requirements-lambda.txt -t ../dependencies/python
+             mkdir -p ../packages/dependencies
+             cd ../dependencies
+             zip ../packages/dependencies/dependencies.zip -r python/
+
+      - name: copy utils in archive
+        working-directory: terraform
+        run: | 
+             mkdir -p ../utils_layer/python/utils 
+             mkdir -p ../packages/extraction_utils
+             cp -r ../utils/extraction_utils ../utils_layer/python/utils/
+             cd ../utils_layer
+             zip ../packages/extraction_utils/utils.zip -r python/
 
       - name: Terraform Plan
         working-directory: terraform
@@ -73,3 +86,7 @@ jobs:
       - name: Terraform Apply
         working-directory: terraform
         run: terraform apply -auto-approve
+
+
+
+        
