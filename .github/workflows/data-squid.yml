@@ -64,7 +64,9 @@ jobs:
 
       - name: copy utils in archive
         working-directory: terraform
-        run: mkdir -p ../utils_layer/python/utils && cp ../utils/extraction_utils ../utils_layer/python/utils/ && zip ../packages/extraction_utils/utils.zip -r ../utils_layer/
+        run: | 
+             mkdir -p ../utils_layer/python/utils 
+             cp ../utils/extraction_utils ../utils_layer/python/utils/ | zip ../packages/extraction_utils/utils.zip -r ../utils_layer/
 
       - name: Terraform Plan
         working-directory: terraform
