@@ -8,6 +8,7 @@ from utils.extraction_utils.lambda_utils import (
     format_data_to_json,
     create_filename,
     connection_to_database,
+    get_s3_bucket_name
 )
 import logging
 
@@ -17,7 +18,7 @@ logging.basicConfig(level=logging.INFO)
 
 s3_client = boto3.client("s3")
 conn = connection_to_database()
-bucket_name = "data-squid-ingest-bucket-20250225123034817500000001"
+bucket_name = get_s3_bucket_name("data-squid-ingest-bucket-")
 
 
 def extract_data(s3_client, conn, bucket_name):
@@ -126,7 +127,7 @@ def lambda_handler(event, context):
         return {"result": "Failure", "error": "Error creating S3 client"}
 
     conn = connection_to_database()
-    bucket_name = "data-squid-ingest-bucket-20250225123034817500000001"
+    bucket_name = get_s3_bucket_name("data-squid-ingest-bucket-")
 
     try:
         result = extract_data(s3_client, conn, bucket_name)
