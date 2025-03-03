@@ -40,6 +40,7 @@ networkx==3.4.2
 openapi-schema-validator==0.6.3
 openapi-spec-validator==0.7.1
 packaging==24.2
+pandas==2.2.3
 pathable==0.4.4
 pathspec==0.12.1
 pbr==6.1.1

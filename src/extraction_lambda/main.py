@@ -8,6 +8,7 @@ from utils.extraction_utils.lambda_utils import (
     format_data_to_json,
     create_filename,
     connection_to_database,
+    get_s3_bucket_name
 )
 import logging
 
@@ -17,7 +18,7 @@ logging.basicConfig(level=logging.INFO)
 
 s3_client = boto3.client("s3")
 conn = connection_to_database()
-bucket_name = "data-squid-ingest-bucket-20250225123034817500000001"
+bucket_name = get_s3_bucket_name("data-squid-ingest-bucket-")
 
 
 def extract_data(s3_client, conn, bucket_name):
@@ -85,7 +86,7 @@ def extract_data(s3_client, conn, bucket_name):
             print(f"{table} last extraction date: {last_extracted}")
             query = f"SELECT * FROM {table} WHERE last_updated > '{last_extracted};'"
             extraction_type = 'Continuous extraction'
-            
+
         else:
             query = f"SELECT * FROM {table};"
             s3_client.put_object(Bucket=bucket_name, Key=f'{table}/last_extracted.txt', Body=timestamp_for_last_extracted)
@@ -103,14 +104,14 @@ def extract_data(s3_client, conn, bucket_name):
             upload_to_s3(data=data_json, bucket_name=bucket_name, object_name=filename)
             extracted_tables.append(table)
 
-    
+
 
     if extracted_tables:
         return extraction_type, f"Tables extracted - {extracted_tables}"
     else:
         return 'No updates in the database, No Tables extracted'
-    
-    
+
+
 
 
 def lambda_handler(event, context):
@@ -126,7 +127,7 @@ def lambda_handler(event, context):
         return {"result": "Failure", "error": "Error creating S3 client"}
 
     conn = connection_to_database()
-    bucket_name = "data-squid-ingest-bucket-20250225123034817500000001"
+    bucket_name = get_s3_bucket_name("data-squid-ingest-bucket-")
 
     try:
         result = extract_data(s3_client, conn, bucket_name)
