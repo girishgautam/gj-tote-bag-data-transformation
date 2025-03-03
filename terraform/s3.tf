@@ -15,11 +15,11 @@ resource "aws_s3_bucket" "transform_bucket"{
 }
 
 
-resource "aws_s3_object" "extraction_utils" {
-    bucket = aws_s3_bucket.code_bucket.bucket
-    key = "${var.extraction_utils}/${var.extraction_utils_zip_filename}"
-    source = data.archive_file.extraction_utils.output_path
-}
+# resource "aws_s3_object" "extraction_utils" {
+#     bucket = aws_s3_bucket.code_bucket.bucket
+#     key = "${var.extraction_utils}/${var.extraction_utils_zip_filename}"
+#     source = "${path.module}/../packages/extraction_utils/utils.zip"
+# }
 
 
 
