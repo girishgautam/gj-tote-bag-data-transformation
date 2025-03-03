@@ -68,7 +68,8 @@ jobs:
              mkdir -p ../utils_layer/python/utils 
              mkdir -p ../packages/extraction_utils
              cp -r ../utils/extraction_utils ../utils_layer/python/utils/
-             zip ../packages/extraction_utils/utils.zip -r ../utils_layer/
+             cd ../
+             zip packages/extraction_utils/utils.zip -r utils_layer/python/
 
       - name: Terraform Plan
         working-directory: terraform
