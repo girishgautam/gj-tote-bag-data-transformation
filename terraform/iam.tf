@@ -24,17 +24,18 @@ data "aws_iam_policy_document" "read_write_s3" {
   statement {
     effect = "Allow"
     actions = [
-      "s3:PutObject",
-      "s3:GetObject",
-      "s3:ListBucket",
-      "s3:ListAllMyBuckets",
+      "s3:Describe*",
+      "s3:Get*",
+      "s3:List*",
+      "s3:Put*",
       "s3-object-lambda:Get*",
       "s3-object-lambda:List*",
       "s3-object-lambda:Put*"
     ]
     resources = [
-        "${aws_s3_bucket.ingest_bucket.arn}/*",
-        "${aws_s3_bucket.transform_bucket.arn}/*"
+        "*"
+        # "${aws_s3_bucket.ingest_bucket.arn}/*",
+        # "${aws_s3_bucket.transform_bucket.arn}/*"
     ]
   }
 }
