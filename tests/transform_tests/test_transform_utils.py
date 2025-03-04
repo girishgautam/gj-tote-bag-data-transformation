@@ -5,7 +5,8 @@ from utils.transform_utils.transform_lambda_utils import (
     dim_staff,
     dim_location,
     dim_currency,
-    dim_counterparty
+    dim_counterparty,
+    fact_sales_order
 )
 
 from utils.extraction_utils.lambda_utils import (
@@ -387,3 +388,48 @@ class TestDimCounterparty:
             assert dim_counterparty_result['counterparty_id'][0] == 1
             assert type(dim_counterparty_result) == pd.core.frame.DataFrame
             assert dim_counterparty_result['counterparty_legal_address_line_1'][0] == '6826 Herzog Via'
+
+
+class TestFactSalesOrder:
+
+    @pytest.fixture
+    def test_df(self):
+        return pd.DataFrame({
+            "staff_id": [1, 2],
+            "created_at": ["2025-03-04 10:27:15.123456", "2025-03-05 12:00:00.000000"],
+            "last_updated": ["2025-03-04 10:28:15.123456", "2025-03-05 13:00:00.000000"],
+        })
+    
+    def test_fact_sales_order_datetime_format(self, test_df):
+        result = fact_sales_order(test_df)
+
+        assert result["created_date"].tolist() == [datetime(2025, 3, 4).date(), datetime(2025, 3, 5).date()]
+        assert result["created_time"].tolist() == [datetime(2025, 3, 4, 10, 27, 15, 123456).time(),
+                                                datetime(2025, 3, 5, 12, 0, 0).time()]
+        assert result["last_updated_date"].tolist() == [datetime(2025, 3, 4).date(), datetime(2025, 3, 5).date()]
+        assert result["last_updated_time"].tolist() == [datetime(2025, 3, 4, 10, 28, 15, 123456).time(),
+                                                        datetime(2025, 3, 5, 13, 0, 0).time()]
+
+
+    def test_fact_sales_order_structure(self, test_df):
+        result = fact_sales_order(test_df)
+
+        assert "sales_record_id" in result.columns
+        assert "sales_staff_id" in result.columns
+        assert "created_date" in result.columns
+        assert "created_time" in result.columns
+        assert "last_updated_date" in result.columns
+        assert "last_updated_time" in result.columns
+
+        assert "staff_id" not in result.columns
+        assert "created_at" not in result.columns
+        assert "last_updated" not in result.columns
+
+    def test_fact_sales_order_sales_record_id(self, test_df):
+        result = fact_sales_order(test_df)
+
+        assert list(result["sales_record_id"]) == [1, 2]
+        assert result['sales_record_id'][1] == 2
+        
+
+
