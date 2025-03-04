@@ -80,7 +80,7 @@ jobs:
         run: | 
              mkdir -p ../transform_utils_layer/python/utils 
              mkdir -p ../packages/transformation_utils
-             cp -r ../utils/transformation_utils ../transform_utils_layer/python/utils/
+             cp -r ../utils/transform_utils ../transform_utils_layer/python/utils/
              cd ../transform_utils_layer
              zip ../packages/transformation_utils/utils.zip -r python/
 
