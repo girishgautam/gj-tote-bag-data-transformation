@@ -131,7 +131,8 @@ data "aws_iam_policy_document" "ingestion_sns_topic_policy" {
     effect = "Allow"
     actions = [
       "SNS:Subscribe",
-      "SNS:Receive"
+      "SNS:Receive",
+      "SNS:Publish"
     ]
 
     condition {
