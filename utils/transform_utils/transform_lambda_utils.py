@@ -17,8 +17,7 @@ def convert_json_to_df_from_s3(table, bucket_name):
     return df
 
 # bucket_name = get_s3_bucket_name("data-squid-ingest-bucket-")
-# df_currency = convert_json_to_df_from_s3('currency', bucket_name)
-# print(df_currency.head())
+# sales_order_df = convert_json_to_df_from_s3('sales_order', bucket_name)
 # df_department = convert_json_to_df_from_s3('department', bucket_name)
 
 
@@ -114,16 +113,19 @@ def fact_sales_order(df):
     fact_sales_order_df['sales_record_id'] = range(1, len(fact_sales_order_df) + 1)
     fact_sales_order_df.rename(columns={'staff_id' : 'sales_staff_id'}, inplace=True)
 
-    fact_sales_order_df['created_at']=pd.to_datetime(df['created_at'], format='%Y-%m-%d %H:%M:%S.%f')
+    fact_sales_order_df['created_at']=pd.to_datetime(df['created_at'], format='mixed')
     fact_sales_order_df['created_date']=fact_sales_order_df['created_at'].dt.date
     fact_sales_order_df['created_time']=fact_sales_order_df['created_at'].dt.time
 
-    fact_sales_order_df['last_updated']=pd.to_datetime(df['last_updated'], format='%Y-%m-%d %H:%M:%S.%f')
+    fact_sales_order_df['last_updated']=pd.to_datetime(df['last_updated'], format='mixed') 
     fact_sales_order_df['last_updated_date']=fact_sales_order_df['last_updated'].dt.date
     fact_sales_order_df['last_updated_time']=fact_sales_order_df['last_updated'].dt.time
 
     fact_sales_order_df.drop(columns=['created_at', 'last_updated'], inplace=True)
 
     return fact_sales_order_df
+
+# output = fact_sales_order(sales_order_df)
+# print(output.head())
 
 
