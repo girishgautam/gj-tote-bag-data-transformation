@@ -109,3 +109,16 @@ def dim_currency(df):
 
     return dim_currency
 
+def dim_date(start='2022-11-03', end='2025-12-31'):
+    calendar_range = pd.date_range(start, end)
+
+    df = pd.DataFrame({'date_id': calendar_range})
+    df['year'] = df.date_id.dt.year
+    df['month'] = df.date_id.dt.month
+    df['day'] = df.date_id.dt.day
+    df['day_of_week'] = df.date_id.dt.day_of_week
+    df['day_name'] = df.date_id.dt.day_name()
+    df['month_name'] = df.date_id.dt.month_name()
+    df['quarter'] = df.date_id.dt.quarter
+
+    return df

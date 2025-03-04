@@ -5,7 +5,8 @@ from utils.transform_utils.transform_lambda_utils import (
     dim_staff,
     dim_location,
     dim_currency,
-    dim_counterparty
+    dim_counterparty,
+    dim_date
 )
 
 from utils.extraction_utils.lambda_utils import (
@@ -387,3 +388,25 @@ class TestDimCounterparty:
             assert dim_counterparty_result['counterparty_id'][0] == 1
             assert type(dim_counterparty_result) == pd.core.frame.DataFrame
             assert dim_counterparty_result['counterparty_legal_address_line_1'][0] == '6826 Herzog Via'
+
+
+class TestDimDate:
+    def test_dim_date_start_date_matches_date_start_date(self):
+        result = dim_date()
+
+        assert result['date_id'][0].strftime('%Y-%m-%d') == '2022-11-03'
+
+    def test_dim_date_start_date_quarter_matches_start_date(self):
+        result = dim_date()
+
+        assert result['quarter'][0] == 4
+
+    def test_dim_date_end_date_matches_date_specified_end_date(self):
+        result = dim_date()
+
+        assert result['date_id'][len(result)-1].strftime('%Y-%m-%d') == '2025-12-31'
+
+    def test_dim_date_end_date_quarter_matches_specified_end_date(self):
+        result = dim_date()
+
+        assert result['quarter'][len(result)-1] == 4
