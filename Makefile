@@ -39,6 +39,29 @@ requirements: create-environment
 	$(call execute_in_env, $(PIP) install -r ./requirements.txt)
 
 ################################################################################################################
+
+# terraform setup
+
+# call inside terraform working directory
+
+# build-lambda-layer-dependencies:
+# 	$(call execute_in_env, $(PIP) install -r ../requirements-lambda.txt -t ../dependencies/python)
+#     $(call execute_in_env, mkdir -p ../packages/dependencies)
+#     $(call execute_in_env, cd ../dependencies)
+#     $(call execute_in_env, zip ../packages/dependencies/dependencies.zip -r python/)
+# 	$(call execute_in_env, cd ../terraform)
+
+# build-lambda-layer-utils:
+# 	$(call execute_in_env, mkdir -p ../utils_layer/python/utils)
+#     $(call execute_in_env, mkdir -p ../packages/extraction_utils)
+#     $(call execute_in_env, cp -r ../utils/extraction_utils ../utils_layer/python/utils/)
+#     $(call execute_in_env, cd ../utils_layer)
+# 	$(call execute_in_env, zip ../packages/extraction_utils/utils.zip -r python/)
+
+# terraform-setup: build-lambda-layer-dependencies build-lambda-layer-utils
+
+################################################################################################################
+
 # Set Up
 ## Install bandit
 bandit:

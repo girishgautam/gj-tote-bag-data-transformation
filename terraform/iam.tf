@@ -2,14 +2,14 @@
 
 data "aws_iam_policy_document" "assume_role_policy" {
   statement {
+    effect = "Allow"
     actions = ["sts:AssumeRole"]
 
     principals {
       type        = "Service"
       identifiers = ["lambda.amazonaws.com"]
     }
-  
-}
+  }
 }
 
 resource "aws_iam_role" "lambda_role" {
@@ -22,14 +22,28 @@ resource "aws_iam_role" "lambda_role" {
 
 data "aws_iam_policy_document" "read_write_s3" {
   statement {
-    actions = ["s3:PutObject", "s3:GetObject", "s3:ListBucket"]
-
-    resources = [
-        aws_s3_bucket.ingest_bucket.arn,
-        aws_s3_bucket.transform_bucket.arn
+    effect = "Allow"
+    actions = [
+      "s3:Describe*",
+      "s3:Get*",
+      "s3:List*",
+      "s3:Put*",
+      "s3-object-lambda:Get*",
+      "s3-object-lambda:List*",
+      "s3-object-lambda:Put*"
     ]
-  
-}
+    resources = [
+        "*"
+        # # ClientError: "errorMessage": "An error occurred (AccessDenied)
+        # # when calling the ListBuckets operation: User:
+        # # arn:aws:sts::195275662632:assumed-role/data-squid-lambda20250225122007303900000001/extract_lambda
+        # # is not authorized to perform: s3:ListAllMyBuckets because no
+        # # identity-based policy allows the s3:ListAllMyBuckets action"
+        # #
+        # "${aws_s3_bucket.ingest_bucket.arn}/*",
+        # "${aws_s3_bucket.transform_bucket.arn}/*"
+    ]
+  }
 }
 
 resource "aws_iam_policy" "read_write_s3" {
@@ -72,22 +86,21 @@ resource "aws_iam_role_policy_attachment" "read_secretsmanager" {
 # Cloudwatch permissions
 
 data "aws_iam_policy_document" "cloudwatch-policy" {
-  statement {
+  statement{
     effect = "Allow"
     resources = [
-      "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:/aws/lambda/${var.extract_lambda}:*"
-    ]
-    actions = ["Logs:CreateLogGroup"]
-  }
-  statement {
-    effect = "Allow"
-    resources = [
-      "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:/aws/lambda/${var.extract_lambda}:*"
+      "*"
+      #"arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:/aws/lambda/${var.extract_lambda}:*"
     ]
     actions = [
-      "Logs:CreateLogStream",
-      "Logs:PutLogEvents"
+      "*"
     ]
+
+  
+  #   principals{
+  #       type        = "Service"
+  #       identifiers = ["events.amazonaws.com", "lambda.amazonaws.com"]
+  # }
   }
 }
 
@@ -110,12 +123,12 @@ resource "aws_lambda_permission" "extract_lambda" {
 }
 
 
-
 #create iam for sns
 
 data "aws_iam_policy_document" "ingestion_sns_topic_policy" {
 
   statement {
+    effect = "Allow"
     actions = [
       "SNS:Subscribe",
       "SNS:Receive"
@@ -128,8 +141,6 @@ data "aws_iam_policy_document" "ingestion_sns_topic_policy" {
         195275662632
       ]
     }
-
-    effect = "Allow"
 
     principals {
       type        = "AWS"

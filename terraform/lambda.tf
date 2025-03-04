@@ -15,8 +15,9 @@ resource "aws_lambda_function" "extract_lambda" {
       aws_lambda_layer_version.dependencies_layer.arn
     ]
     filename = data.archive_file.extract_lambda.output_path
+    source_code_hash = filebase64sha256(data.archive_file.extract_lambda.output_path)
     handler = "main.lambda_handler"
-    timeout = 899
+    timeout = 900
     runtime = "python3.12"
 
     environment {
