@@ -131,7 +131,8 @@ data "aws_iam_policy_document" "ingestion_sns_topic_policy" {
     effect = "Allow"
     actions = [
       "SNS:Subscribe",
-      "SNS:Receive"
+      "SNS:Receive",
+      "SNS:Publish"
     ]
 
     condition {
@@ -152,3 +153,12 @@ data "aws_iam_policy_document" "ingestion_sns_topic_policy" {
     ]
   }
 }
+
+# # Permissions for ingest bucket to invoke transform lambda
+# resource "aws_lambda_permission" "allow_bucket" {
+#   statement_id  = "AllowExecutionFromS3Bucket"
+#   action        = "lambda:InvokeFunction"
+#   function_name = aws_lambda_function.func.arn
+#   principal     = "s3.amazonaws.com"
+#   source_arn    = aws_s3_bucket.bucket.arn
+# }
