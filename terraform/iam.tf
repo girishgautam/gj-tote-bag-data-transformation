@@ -89,14 +89,16 @@ data "aws_iam_policy_document" "cloudwatch-policy" {
   statement {
     effect = "Allow"
     resources = [
-      "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:/aws/lambda/${var.extract_lambda}:*"
+      "*"
+      #"arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:/aws/lambda/${var.extract_lambda}:*"
     ]
     actions = ["logs:Create*"]
   }
   statement {
     effect = "Allow"
     resources = [
-      "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:/aws/lambda/${var.extract_lambda}:*"
+      "*"
+      #"arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:/aws/lambda/${var.extract_lambda}:*"
     ]
     actions = [
       "Logs:Create*",
