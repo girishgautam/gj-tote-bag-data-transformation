@@ -7,7 +7,7 @@ resource "aws_cloudwatch_event_rule" "scheduler" {
 }
 
 resource "aws_cloudwatch_event_target" "sns" {
-  rule      = aws_cloudwatch_event_rule.scheduler.function_name
+  rule      = aws_cloudwatch_event_rule.scheduler.name
   target_id = "InvokeExtractionLambda"
   # target id not required just a label to help identify target
 
@@ -15,7 +15,7 @@ resource "aws_cloudwatch_event_target" "sns" {
 }
 
 resource "aws_lambda_permission" "event_permissions" {
-  function_name = aws_lambda_function.extract_lambda.name
+  function_name = aws_lambda_function.extract_lambda.function_name
   action = "lambda:InvokeFunction"
   principal = "events.amazonaws.com"
   source_arn = aws_cloudwatch_event_rule.scheduler.arn
