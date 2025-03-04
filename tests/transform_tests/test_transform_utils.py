@@ -591,8 +591,6 @@ class TestDataFrameToParquet:
 
         assert df_read_back.empty
 
-        assert result['sales_record_id'][1] == 2
-
 
 
 class TestDimDate:
