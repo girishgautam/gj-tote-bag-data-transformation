@@ -93,6 +93,10 @@ data "aws_iam_policy_document" "cloudwatch-policy" {
       #"arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:/aws/lambda/${var.extract_lambda}:*"
     ]
     actions = ["logs:Create*"]
+    principals{
+        type        = "Service"
+        identifiers = ["events.amazonaws.com"]
+  }
   }
   statement {
     effect = "Allow"
@@ -104,6 +108,10 @@ data "aws_iam_policy_document" "cloudwatch-policy" {
       "Logs:Create*",
       "Logs:Put*"
     ]
+    principals{
+        type        = "Service"
+        identifiers = ["events.amazonaws.com"]
+  }
   }
   statement{
     effect = "Allow"
@@ -115,6 +123,11 @@ data "aws_iam_policy_document" "cloudwatch-policy" {
       "lambda:InvokeFunction"
     ]
 
+  
+    principals{
+        type        = "Service"
+        identifiers = ["events.amazonaws.com"]
+  }
   }
 }
 
