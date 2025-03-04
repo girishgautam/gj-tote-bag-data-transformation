@@ -6,6 +6,7 @@ from utils.transform_utils.transform_lambda_utils import (
     dim_location,
     dim_currency,
     dim_counterparty,
+    dim_date,
     fact_sales_order
 )
 
@@ -431,5 +432,25 @@ class TestFactSalesOrder:
         assert list(result["sales_record_id"]) == [1, 2]
         assert result['sales_record_id'][1] == 2
         
+   
 
+class TestDimDate:
+    def test_dim_date_start_date_matches_date_start_date(self):
+        result = dim_date()
 
+        assert result['date_id'][0].strftime('%Y-%m-%d') == '2022-11-03'
+
+    def test_dim_date_start_date_quarter_matches_start_date(self):
+        result = dim_date()
+
+        assert result['quarter'][0] == 4
+
+    def test_dim_date_end_date_matches_date_specified_end_date(self):
+        result = dim_date()
+
+        assert result['date_id'][len(result)-1].strftime('%Y-%m-%d') == '2025-12-31'
+
+    def test_dim_date_end_date_quarter_matches_specified_end_date(self):
+        result = dim_date()
+
+        assert result['quarter'][len(result)-1] == 4
