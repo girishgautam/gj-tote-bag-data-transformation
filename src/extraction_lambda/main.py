@@ -8,7 +8,7 @@ from utils.extraction_utils.lambda_utils import (
     format_data_to_json,
     create_filename,
     connection_to_database,
-    get_s3_bucket_name
+    get_s3_bucket_name,
 )
 import logging
 
@@ -76,42 +76,47 @@ def extract_data(s3_client, conn, bucket_name):
 
     timestamp = datetime.now()
     timestamp_for_filename = timestamp.strftime("%Y/%m/%d/%H:%M")
-    timestamp_for_last_extracted = timestamp_for_filename.encode('utf-8')
+    timestamp_for_last_extracted = timestamp_for_filename.encode("utf-8")
     for table in table_names:
         if is_data:
-            last_extracted_obj = s3_client.get_object(Bucket=bucket_name, Key=f'{table}/last_extracted.txt')
-            last_extracted_str = last_extracted_obj['Body'].read().decode('utf-8')
+            last_extracted_obj = s3_client.get_object(
+                Bucket=bucket_name, Key=f"{table}/last_extracted.txt"
+            )
+            last_extracted_str = last_extracted_obj["Body"].read().decode("utf-8")
             dt = datetime.strptime(last_extracted_str, "%Y/%m/%d/%H:%M")
             last_extracted = dt.isoformat()
             print(f"{table} last extraction date: {last_extracted}")
             query = f"SELECT * FROM {table} WHERE last_updated > '{last_extracted};'"
-            extraction_type = 'Continuous extraction'
+            extraction_type = "Continuous extraction"
 
         else:
             query = f"SELECT * FROM {table};"
-            s3_client.put_object(Bucket=bucket_name, Key=f'{table}/last_extracted.txt', Body=timestamp_for_last_extracted)
-            extraction_type = 'Initial extraction'
-
+            s3_client.put_object(
+                Bucket=bucket_name,
+                Key=f"{table}/last_extracted.txt",
+                Body=timestamp_for_last_extracted,
+            )
+            extraction_type = "Initial extraction"
 
         rows = conn.run(query)
         columns = [col["name"] for col in conn.columns]
         data_json = format_data_to_json(rows, columns)
         filename = create_filename(table, timestamp_for_filename)
-        data_json_str = json.loads(data_json.decode('utf-8'))
+        data_json_str = json.loads(data_json.decode("utf-8"))
 
         if data_json_str:
-            s3_client.put_object(Bucket=bucket_name, Key=f'{table}/last_extracted.txt', Body=timestamp_for_last_extracted)
+            s3_client.put_object(
+                Bucket=bucket_name,
+                Key=f"{table}/last_extracted.txt",
+                Body=timestamp_for_last_extracted,
+            )
             upload_to_s3(data=data_json, bucket_name=bucket_name, object_name=filename)
             extracted_tables.append(table)
-
-
 
     if extracted_tables:
         return extraction_type, f"Tables extracted - {extracted_tables}"
     else:
-        return 'No updates in the database, No Tables extracted'
-
-
+        return "No updates in the database, No Tables extracted"
 
 
 def lambda_handler(event, context):
@@ -156,8 +161,7 @@ def lambda_handler(event, context):
 
     except ClientError as e:
         logging.error(f"Error updating last_extracted.txt: {e}")
-        return {"result": "Failure",
-                "error": "Error updating last_extracted.txt"}
+        return {"result": "Failure", "error": "Error updating last_extracted.txt"}
 
     except Exception as e:
         logging.error(f"Unexpected error: {e}")

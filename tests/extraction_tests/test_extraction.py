@@ -5,7 +5,7 @@ from utils.extraction_utils.lambda_utils import (
     upload_to_s3,
     create_filename,
     format_data_to_json,
-    get_s3_bucket_name
+    get_s3_bucket_name,
 )
 from datetime import datetime
 from unittest.mock import patch, MagicMock
@@ -136,7 +136,9 @@ class TestCreateFilename:
         Tests that `create_filename` generates the correct filename with a timestamp-based directory structure.
         """
         table_name = "test_table"
-        mock_datetime = datetime(2025, 2, 25, 15, 9, 26, 123456).strftime("%Y/%m/%d/%H:%M")
+        mock_datetime = datetime(2025, 2, 25, 15, 9, 26, 123456).strftime(
+            "%Y/%m/%d/%H:%M"
+        )
         expected_filename = "test_table/2025/02/25/15:09.json"
         result = create_filename(table_name, mock_datetime)
         assert result == expected_filename
@@ -202,11 +204,15 @@ class TestExtractData:
         mock_conn.run.return_value = [{"id": 1, "name": "example"}]
         mock_conn.columns = [{"name": "id"}, {"name": "name"}]
         mock_check_for_data.return_value = True
-        mock_s3_client.get_object.return_value = {'Body': MagicMock(read=lambda: b'2023/02/24/10:00')}
-        mock_format_data_to_json.return_value = json.dumps([{'id': 1, 'name': 'example'}]).encode('utf-8')
-        mock_create_filename.return_value = 'testfile.json'
+        mock_s3_client.get_object.return_value = {
+            "Body": MagicMock(read=lambda: b"2023/02/24/10:00")
+        }
+        mock_format_data_to_json.return_value = json.dumps(
+            [{"id": 1, "name": "example"}]
+        ).encode("utf-8")
+        mock_create_filename.return_value = "testfile.json"
 
-        bucket_name = 'test-bucket'
+        bucket_name = "test-bucket"
         s3_client = mock_s3_client
         conn = mock_conn
 
@@ -233,12 +239,16 @@ class TestExtractData:
         # Ensure that upload_to_s3 was called for each table
         assert mock_upload_to_s3.call_count == len(table_names)
 
-
         # Verify that the last_extracted timestamp is correctly formatted
         last_extracted = datetime.now().strftime("%Y/%m/%d/%H:%M")
-        actual_last_extracted_call = mock_s3_client.put_object.call_args[1]['Body'].decode('utf-8')
+        actual_last_extracted_call = mock_s3_client.put_object.call_args[1][
+            "Body"
+        ].decode("utf-8")
         print(actual_last_extracted_call, "<<< last extracted call")
-        print(mock_s3_client.put_object.call_args[1], '<<< mock s3 client put object call args')
+        print(
+            mock_s3_client.put_object.call_args[1],
+            "<<< mock s3 client put object call args",
+        )
         assert actual_last_extracted_call.startswith(last_extracted[:15])
 
     @patch("src.extraction_lambda.main.check_for_data")
@@ -294,11 +304,11 @@ class TestExtractData:
         # Ensure that upload_to_s3 was called for each table
         assert mock_upload_to_s3.call_count == len(table_names)
 
-
-
         # Verify that the last_extracted timestamp is correctly formatted
         last_extracted = datetime.now().strftime("%Y/%m/%d/%H:%M")
-        actual_last_extracted_call = mock_s3_client.put_object.call_args[1]['Body'].decode('utf-8')
+        actual_last_extracted_call = mock_s3_client.put_object.call_args[1][
+            "Body"
+        ].decode("utf-8")
         assert actual_last_extracted_call.startswith(last_extracted[:15])
 
 
@@ -309,9 +319,15 @@ class TestLambdaHandler:
     @patch("src.extraction_lambda.main.connection_to_database")
     @patch("src.extraction_lambda.main.extract_data")
     def test_lambda_handler_success(
-        self, mock_extract_data, mock_connection_to_database, mock_boto_client, mock_get_s3_bucket_name
+        self,
+        mock_extract_data,
+        mock_connection_to_database,
+        mock_boto_client,
+        mock_get_s3_bucket_name,
     ):
-        mock_get_s3_bucket_name.return_value = "data-squid-ingest-bucket-20250225123034817500000001"
+        mock_get_s3_bucket_name.return_value = (
+            "data-squid-ingest-bucket-20250225123034817500000001"
+        )
         mock_s3_client = MagicMock()
         mock_boto_client.return_value = mock_s3_client
 
@@ -353,9 +369,15 @@ class TestLambdaHandler:
     @patch("src.extraction_lambda.main.connection_to_database")
     @patch("src.extraction_lambda.main.extract_data")
     def test_client_error_during_extract_data(
-        self, mock_extract_data, mock_connection_to_database, mock_boto_client, mock_get_s3_bucket_name
+        self,
+        mock_extract_data,
+        mock_connection_to_database,
+        mock_boto_client,
+        mock_get_s3_bucket_name,
     ):
-        mock_get_s3_bucket_name.return_value = "data-squid-ingest-bucket-20250225123034817500000001"
+        mock_get_s3_bucket_name.return_value = (
+            "data-squid-ingest-bucket-20250225123034817500000001"
+        )
         mock_boto_client.return_value = MagicMock()
         mock_conn = MagicMock()
         mock_connection_to_database.return_value = mock_conn
@@ -375,9 +397,15 @@ class TestLambdaHandler:
     @patch("src.extraction_lambda.main.connection_to_database")
     @patch("src.extraction_lambda.main.extract_data")
     def test_unexpected_error_during_put_object(
-        self, mock_extract_data, mock_connection_to_database, mock_boto_client, mock_get_s3_bucket_name
+        self,
+        mock_extract_data,
+        mock_connection_to_database,
+        mock_boto_client,
+        mock_get_s3_bucket_name,
     ):
-        mock_get_s3_bucket_name.return_value = "data-squid-ingest-bucket-20250225123034817500000001"
+        mock_get_s3_bucket_name.return_value = (
+            "data-squid-ingest-bucket-20250225123034817500000001"
+        )
         mock_aws = MagicMock()
         mock_boto_client.return_value = mock_aws
         mock_conn = MagicMock()
@@ -396,9 +424,15 @@ class TestLambdaHandler:
     @patch("src.extraction_lambda.main.connection_to_database")
     @patch("src.extraction_lambda.main.extract_data")
     def test_successful_data_extraction_and_report_storage(
-        self, mock_extract_data, mock_connection_to_database, mock_boto_client, mock_get_s3_bucket_name
+        self,
+        mock_extract_data,
+        mock_connection_to_database,
+        mock_boto_client,
+        mock_get_s3_bucket_name,
     ):
-        mock_get_s3_bucket_name.return_value = "data-squid-ingest-bucket-20250225123034817500000001"
+        mock_get_s3_bucket_name.return_value = (
+            "data-squid-ingest-bucket-20250225123034817500000001"
+        )
         mock_s3 = MagicMock()
         mock_boto_client.return_value = mock_s3
         mock_conn = MagicMock()
@@ -419,16 +453,19 @@ class TestGetS3BucketName:
     @pytest.fixture
     def setup_s3(self):
         with mock_aws():
-            s3 = boto3.client('s3')
+            s3 = boto3.client("s3")
 
-            s3.create_bucket(Bucket="test-prefix-123",
-             CreateBucketConfiguration={"LocationConstraint": "eu-west-2"}
+            s3.create_bucket(
+                Bucket="test-prefix-123",
+                CreateBucketConfiguration={"LocationConstraint": "eu-west-2"},
             )
-            s3.create_bucket(Bucket="test-prefix-456",
-             CreateBucketConfiguration={"LocationConstraint": "eu-west-2"}
+            s3.create_bucket(
+                Bucket="test-prefix-456",
+                CreateBucketConfiguration={"LocationConstraint": "eu-west-2"},
             )
-            s3.create_bucket(Bucket="another-bucket",
-            CreateBucketConfiguration={"LocationConstraint": "eu-west-2"}
+            s3.create_bucket(
+                Bucket="another-bucket",
+                CreateBucketConfiguration={"LocationConstraint": "eu-west-2"},
             )
             yield s3
 
