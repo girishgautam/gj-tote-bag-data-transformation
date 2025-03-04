@@ -70,7 +70,7 @@ def extract_data(s3_client, conn, bucket_name):
         "department",
         "purchase_order",
     ]
-    extracted_tables = []
+    updated_tables = []
 
     is_data = check_for_data(s3_client, bucket_name)
 
@@ -111,12 +111,10 @@ def extract_data(s3_client, conn, bucket_name):
                 Body=timestamp_for_last_extracted,
             )
             upload_to_s3(data=data_json, bucket_name=bucket_name, object_name=filename)
-            extracted_tables.append(table)
+            updated_tables.append(table)
 
-    if extracted_tables:
-        return extraction_type, f"Tables extracted - {extracted_tables}"
-    else:
-        return "No updates in the database, No Tables extracted"
+        return extraction_type, updated_tables
+
 
 
 def lambda_handler(event, context):
@@ -135,29 +133,32 @@ def lambda_handler(event, context):
     bucket_name = get_s3_bucket_name("data-squid-ingest-bucket-")
 
     try:
-        result = extract_data(s3_client, conn, bucket_name)
+        extraction_type, updated_tables = extract_data(s3_client, conn, bucket_name)
 
-        report = {
-            "status": "Success",
-            "message": result,
-        }
-        report_file_name = f"reports/{datetime.now().isoformat()}_success.json"
+        if updated_tables:
 
-        s3_client.put_object(
-            Body=json.dumps(report, indent=4),
-            Bucket=bucket_name,
-            Key=report_file_name,
-        )
+            report = {
+                "status": "Success",
+                "extraction_type": extraction_type,
+                "updated_tables": updated_tables
+            }
+            report_file_name = f"reports/{datetime.now().isoformat()}_success.json"
 
-        logging.info(
-            f"Extraction successful. Report stored in\
-                S3: s3://{bucket_name}/{report_file_name}"
-        )
+            s3_client.put_object(
+                Body=json.dumps(report, indent=4),
+                Bucket=bucket_name,
+                Key=report_file_name,
+            )
 
-        return {
-            "result": "Success",
-            "report_file": f"s3://{bucket_name}/{report_file_name}",
-        }
+            logging.info(
+                f"Extraction successful. Report stored in\
+                    S3: s3://{bucket_name}/{report_file_name}"
+            )
+
+            return {
+                "result": "Success",
+                "report_file": f"s3://{bucket_name}/{report_file_name}",
+            }
 
     except ClientError as e:
         logging.error(f"Error updating last_extracted.txt: {e}")
