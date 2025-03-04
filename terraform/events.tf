@@ -13,3 +13,10 @@ resource "aws_cloudwatch_event_target" "sns" {
 
   arn       = aws_lambda_function.extract_lambda.arn
 }
+
+resource "aws_lambda_permission" "event_permissions" {
+  function_name = aws_lambda_function.extract_lambda.function_name
+  action = "lambda:InvokeFunction"
+  principal = "events.amazonaws.com"
+  source_arn = aws_cloudwatch_event_rule.scheduler.arn
+}
