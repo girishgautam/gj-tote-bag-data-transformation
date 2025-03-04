@@ -66,7 +66,7 @@ jobs:
              cd ../dependencies
              zip ../packages/dependencies/dependencies.zip -r python/
 
-      - name: copy utils in archive
+      - name: copy extract utils in archive
         working-directory: terraform
         run: | 
              mkdir -p ../utils_layer/python/utils 
@@ -74,6 +74,15 @@ jobs:
              cp -r ../utils/extraction_utils ../utils_layer/python/utils/
              cd ../utils_layer
              zip ../packages/extraction_utils/utils.zip -r python/
+
+      - name: copy transform utils in archive
+        working-directory: terraform
+        run: | 
+             mkdir -p ../transform_utils_layer/python/utils 
+             mkdir -p ../packages/transformation_utils
+             cp -r ../utils/transformation_utils ../transform_utils_layer/python/utils/
+             cd ../transform_utils_layer
+             zip ../packages/transformation_utils/utils.zip -r python/
 
       - name: Terraform Plan
         working-directory: terraform
