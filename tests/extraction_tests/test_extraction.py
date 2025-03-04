@@ -233,11 +233,10 @@ class TestExtractData:
         extraction_type, result_message = extract_data(s3_client, conn, bucket_name)
 
         assert extraction_type == "Continuous extraction"
-        assert "Tables extracted" in result_message
-        assert "address" in result_message
+        assert result_message == ['address']
 
         # Ensure that upload_to_s3 was called for each table
-        assert mock_upload_to_s3.call_count == len(table_names)
+        assert mock_upload_to_s3.call_count == 1
 
         # Verify that the last_extracted timestamp is correctly formatted
         last_extracted = datetime.now().strftime("%Y/%m/%d/%H:%M")
@@ -298,11 +297,10 @@ class TestExtractData:
         extraction_type, result_message = extract_data(s3_client, conn, bucket_name)
 
         assert extraction_type == "Initial extraction"
-        assert "Tables extracted" in result_message
-        assert "address" in result_message
+        assert result_message == ['address']
 
         # Ensure that upload_to_s3 was called for each table
-        assert mock_upload_to_s3.call_count == len(table_names)
+        assert mock_upload_to_s3.call_count == 1
 
         # Verify that the last_extracted timestamp is correctly formatted
         last_extracted = datetime.now().strftime("%Y/%m/%d/%H:%M")
@@ -429,16 +427,14 @@ class TestLambdaHandler:
         mock_connection_to_database,
         mock_boto_client,
         mock_get_s3_bucket_name,
-    ):
-        mock_get_s3_bucket_name.return_value = (
-            "data-squid-ingest-bucket-20250225123034817500000001"
-        )
+        ):
+        mock_get_s3_bucket_name.return_value = "data-squid-ingest-bucket-20250225123034817500000001"
         mock_s3 = MagicMock()
         mock_boto_client.return_value = mock_s3
         mock_conn = MagicMock()
         mock_connection_to_database.return_value = mock_conn
 
-        mock_extract_data.return_value = "Extraction successful"
+        mock_extract_data.return_value = ("incremental", ["table1", "table2"])
 
         result = lambda_handler({}, {})
 
@@ -446,7 +442,6 @@ class TestLambdaHandler:
 
         assert result["result"] == "Success"
         assert "s3://" in result["report_file"]
-
 
 class TestGetS3BucketName:
 
