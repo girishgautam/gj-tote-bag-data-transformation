@@ -113,7 +113,7 @@ def extract_data(s3_client, conn, bucket_name):
             upload_to_s3(data=data_json, bucket_name=bucket_name, object_name=filename)
             updated_tables.append(table)
 
-        return extraction_type, updated_tables
+    return extraction_type, updated_tables
 
 
 def lambda_handler(event, context):

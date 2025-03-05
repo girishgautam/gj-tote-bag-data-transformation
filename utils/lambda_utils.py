@@ -362,7 +362,7 @@ def fact_sales_order(df):
     """
 
     fact_sales_order_df = df
-    fact_sales_order_df["sales_record_id"] = range(1, len(fact_sales_order_df) + 1)
+
     fact_sales_order_df.rename(columns={"staff_id": "sales_staff_id"}, inplace=True)
 
     fact_sales_order_df["created_at"] = pd.to_datetime(df["created_at"], format="mixed")

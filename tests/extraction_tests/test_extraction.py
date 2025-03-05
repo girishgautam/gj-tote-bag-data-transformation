@@ -233,10 +233,10 @@ class TestExtractData:
         extraction_type, result_message = extract_data(s3_client, conn, bucket_name)
 
         assert extraction_type == "Continuous extraction"
-        assert result_message == ["address"]
+        assert result_message == table_names
 
         # Ensure that upload_to_s3 was called for each table
-        assert mock_upload_to_s3.call_count == 1
+        assert mock_upload_to_s3.call_count == 11
 
         # Verify that the last_extracted timestamp is correctly formatted
         last_extracted = datetime.now().strftime("%Y/%m/%d/%H:%M")
@@ -297,10 +297,10 @@ class TestExtractData:
         extraction_type, result_message = extract_data(s3_client, conn, bucket_name)
 
         assert extraction_type == "Initial extraction"
-        assert result_message == ["address"]
+        assert result_message == table_names
 
         # Ensure that upload_to_s3 was called for each table
-        assert mock_upload_to_s3.call_count == 1
+        assert mock_upload_to_s3.call_count == 11
 
         # Verify that the last_extracted timestamp is correctly formatted
         last_extracted = datetime.now().strftime("%Y/%m/%d/%H:%M")

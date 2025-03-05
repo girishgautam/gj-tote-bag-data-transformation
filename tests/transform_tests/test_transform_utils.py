@@ -538,7 +538,6 @@ class TestFactSalesOrder:
         """Tests if fact_sales_order outputs the correct column structure."""
         result = fact_sales_order(test_df)
 
-        assert "sales_record_id" in result.columns
         assert "sales_staff_id" in result.columns
         assert "created_date" in result.columns
         assert "created_time" in result.columns
@@ -548,13 +547,6 @@ class TestFactSalesOrder:
         assert "staff_id" not in result.columns
         assert "created_at" not in result.columns
         assert "last_updated" not in result.columns
-
-    def test_fact_sales_order_sales_record_id(self, test_df):
-        """Tests if fact_sales_order generates correct and sequential sales_record_id values."""
-        result = fact_sales_order(test_df)
-
-        assert list(result["sales_record_id"]) == [1, 2]
-        assert result["sales_record_id"][1] == 2
 
 
 class TestDataFrameToParquet:
