@@ -70,10 +70,10 @@ jobs:
         working-directory: terraform
         run: | 
              mkdir -p ../utils_layer/python/utils 
-             mkdir -p ../packages/extraction_utils
-             cp -r ../utils/extraction_utils ../utils_layer/python/utils/
+             mkdir -p ../packages/utils
+             cp -r ../utils/ ../utils_layer/python/utils/
              cd ../utils_layer
-             zip ../packages/extraction_utils/utils.zip -r python/
+             zip ../packages/utils/utils.zip -r python/
 
       - name: Terraform Plan
         working-directory: terraform
