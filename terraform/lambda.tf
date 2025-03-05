@@ -40,7 +40,7 @@ resource "aws_lambda_function" "transform_lambda" {
     role = aws_iam_role.lambda_role.arn
     function_name = var.transform_lambda
     layers = [
-      aws_lambda_layer_version.transformation_utils_layer.arn,
+      aws_lambda_layer_version.utils_layer.arn,
       aws_lambda_layer_version.dependencies_layer.arn
     ]
     filename = data.archive_file.transform_lambda.output_path
