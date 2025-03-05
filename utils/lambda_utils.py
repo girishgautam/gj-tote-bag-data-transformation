@@ -61,14 +61,14 @@ def collect_credentials_from_AWS(sm_client, secret_id):
     return response_json
 
 
-def connection_to_database():
-    """Returns instance of pg8000 Connection for users to run database
-    queries from"""
-
+def connection_to_database(secret_id="arn:aws:secretsmanager:eu-west-2:195275662632:secret:totesys_database-RBM0fV"):
+    """
+    Returns instance of pg8000 Connection for users to run database
+    queries from totesys database and warehouse; secret_id will default to totesys database. 
+    
+    To access the warehouse, pass secret_id argument: "arn:aws:secretsmanager:eu-west-2:195275662632:secret:database_warehouse-u8BUI3"
+    """
     sm_client = boto3.client("secretsmanager")
-    secret_id = (
-        "arn:aws:secretsmanager:eu-west-2:195275662632:secret:totesys_database-RBM0fV"
-    )
 
     response = collect_credentials_from_AWS(sm_client, secret_id)
 
@@ -188,6 +188,7 @@ def convert_json_to_df_from_s3(table, bucket_name):
 
 # bucket_name = get_s3_bucket_name("data-squid-ingest-bucket-")
 # sales_order_df = convert_json_to_df_from_s3('sales_order', bucket_name)
+# print(sales_order_df.head())
 # df_department = convert_json_to_df_from_s3('department', bucket_name)
 
 
@@ -401,9 +402,6 @@ def dataframe_to_parquet(df):
 
     return parquet_buffer.getvalue()
 
-
-# output = fact_sales_order(sales_order_df)
-# print(output.head())
 
 
 def dim_date(start="2022-11-03", end="2025-12-31"):
