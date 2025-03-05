@@ -2,6 +2,11 @@ name: data-squid-de-tote-bag-data-transformation
 
 on:
   push:
+    branches:
+      - main
+  pull-requests:
+    branches:
+      - main
 
 jobs:
   run-tests:
@@ -31,11 +36,6 @@ jobs:
       - name: Success Confirmation
         run: echo "All checks passed successfully!"
   
-  on:
-    pull_request:
-      branches:
-          - main
-
   deploy-lambda:
     name: deploy-lambda
     runs-on: ubuntu-latest
