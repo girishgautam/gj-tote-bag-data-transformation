@@ -13,9 +13,9 @@ variable "load_lamabda" {
     default = "load_lambda"
 }
 
-variable "extraction_utils" {
+variable "utils" {
     type = string
-    default = "extraction_utils"
+    default = "utils"
 }
 
 variable "dependencies_zip_filename" {
@@ -24,7 +24,7 @@ variable "dependencies_zip_filename" {
     default = "dependencies-1.zip"
 }
 
-variable "extraction_utils_zip_filename" {
+variable "utils_zip_filename" {
     type = string
     # Manual workaround etag/source_hash error to force uploads to S3:
     default = "extraction_utils-2.zip"

@@ -2,10 +2,11 @@ name: data-squid-de-tote-bag-data-transformation
 
 on:
   push:
+    branches:
+      - main
   pull_request:
     branches:
-        - main
-        - develop
+      - main
 
 jobs:
   run-tests:
@@ -35,7 +36,6 @@ jobs:
       - name: Success Confirmation
         run: echo "All checks passed successfully!"
   
-
   deploy-lambda:
     name: deploy-lambda
     runs-on: ubuntu-latest
@@ -70,10 +70,10 @@ jobs:
         working-directory: terraform
         run: | 
              mkdir -p ../utils_layer/python/utils 
-             mkdir -p ../packages/extraction_utils
-             cp -r ../utils/extraction_utils ../utils_layer/python/utils/
+             mkdir -p ../packages/utils
+             cp -r ../utils/ ../utils_layer/python/
              cd ../utils_layer
-             zip ../packages/extraction_utils/utils.zip -r python/
+             zip ../packages/utils/utils.zip -r python/
 
       - name: copy transform utils in archive
         working-directory: terraform

@@ -11,7 +11,7 @@ resource "aws_lambda_function" "extract_lambda" {
     role = aws_iam_role.lambda_role.arn
     function_name = var.extract_lambda
     layers = [
-      aws_lambda_layer_version.extraction_utils_layer.arn,
+      aws_lambda_layer_version.utils_layer.arn,
       aws_lambda_layer_version.dependencies_layer.arn
     ]
     filename = data.archive_file.extract_lambda.output_path
@@ -56,11 +56,40 @@ resource "aws_lambda_function" "transform_lambda" {
   }
 }
 
-# data "archive_file" "extraction_utils"{
+#Archived code for transform lambda
+data "archive_file" "transform_lambda"{
+    type = "zip"
+    output_file_mode = "0666"
+    source_file = "${path.module}/../src/transform_lambda/main.py"
+    output_path = "${path.module}/../packages/${var.transform_lambda}/function.zip"
+}
+
+# Create transform lambda
+resource "aws_lambda_function" "transform_lambda" {
+    role = aws_iam_role.lambda_role.arn
+    function_name = var.transform_lambda
+    layers = [
+      aws_lambda_layer_version.transformation_utils_layer.arn,
+      aws_lambda_layer_version.dependencies_layer.arn
+    ]
+    filename = data.archive_file.transform_lambda.output_path
+    source_code_hash = filebase64sha256(data.archive_file.transform_lambda.output_path)
+    handler = "main.lambda_handler"
+    timeout = 900
+    runtime = "python3.12"
+
+    environment {
+    variables = {
+      BUCKET_TRANSFORM = aws_s3_bucket.transform_bucket.bucket
+    }
+  }
+}
+
+# data "archive_file" "utils"{
 #     type = "zip"
 #     output_file_mode = "0666"
 #     source_dir = "${path.module}/../utils"
-#     output_path = "${path.module}/../packages/extraction_utils/utils.zip"
+#     output_path = "${path.module}/../packages/utils/utils.zip"
 # }
 
 # data "archive_file" "dependencies"{
