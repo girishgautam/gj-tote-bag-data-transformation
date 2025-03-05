@@ -13,6 +13,7 @@ from utils.lambda_utils import (
     create_filename,
     upload_to_s3,
 )
+from src.transform_lambda.main import extract_tablenames
 
 import boto3
 import pytest
@@ -21,6 +22,7 @@ from datetime import datetime
 from decimal import Decimal
 import pandas as pd
 import io
+import json
 
 
 @pytest.fixture(scope="function", autouse=False)
@@ -602,3 +604,26 @@ class TestDimDate:
         result = dim_date()
 
         assert result["quarter"][len(result) - 1] == 4
+
+class TestExtractTableNamesFromReport:
+    def test_returns_correct_filenames(self):
+        with mock_aws():
+            s3_client = boto3.client("s3")
+            s3_client.create_bucket(
+                Bucket="TestBucket",
+                CreateBucketConfiguration={"LocationConstraint": "eu-west-2"}
+            )
+            report = {
+                "status": "Success",
+                "extraction_type": 'continuous',
+                "updated_tables": ['test_table1', 'test_table2']
+            }
+            s3_client.put_object(
+                Body=json.dumps(report, indent=4),
+                Bucket="TestBucket",
+                Key="test_report.json"
+            )
+           
+            tables = extract_tablenames(s3_client, "TestBucket", "test_report.json")
+            assert tables[0] == 'test_table1'
+            assert tables[1] == 'test_table2'
