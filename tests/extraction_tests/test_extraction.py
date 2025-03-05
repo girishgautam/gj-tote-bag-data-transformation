@@ -1,4 +1,4 @@
-from utils.extraction_utils.lambda_utils import (
+from utils.lambda_utils import (
     collect_credentials_from_AWS,
     connection_to_database,
     check_for_data,
@@ -233,7 +233,7 @@ class TestExtractData:
         extraction_type, result_message = extract_data(s3_client, conn, bucket_name)
 
         assert extraction_type == "Continuous extraction"
-        assert result_message == ['address']
+        assert result_message == ["address"]
 
         # Ensure that upload_to_s3 was called for each table
         assert mock_upload_to_s3.call_count == 1
@@ -297,7 +297,7 @@ class TestExtractData:
         extraction_type, result_message = extract_data(s3_client, conn, bucket_name)
 
         assert extraction_type == "Initial extraction"
-        assert result_message == ['address']
+        assert result_message == ["address"]
 
         # Ensure that upload_to_s3 was called for each table
         assert mock_upload_to_s3.call_count == 1
@@ -427,8 +427,10 @@ class TestLambdaHandler:
         mock_connection_to_database,
         mock_boto_client,
         mock_get_s3_bucket_name,
-        ):
-        mock_get_s3_bucket_name.return_value = "data-squid-ingest-bucket-20250225123034817500000001"
+    ):
+        mock_get_s3_bucket_name.return_value = (
+            "data-squid-ingest-bucket-20250225123034817500000001"
+        )
         mock_s3 = MagicMock()
         mock_boto_client.return_value = mock_s3
         mock_conn = MagicMock()
@@ -442,6 +444,7 @@ class TestLambdaHandler:
 
         assert result["result"] == "Success"
         assert "s3://" in result["report_file"]
+
 
 class TestGetS3BucketName:
 

@@ -1,5 +1,5 @@
 from moto import mock_aws
-from utils.transform_utils.transform_lambda_utils import (
+from utils.lambda_utils import (
     convert_json_to_df_from_s3,
     dim_design,
     dim_staff,
@@ -9,13 +9,11 @@ from utils.transform_utils.transform_lambda_utils import (
     dim_date,
     fact_sales_order,
     dataframe_to_parquet,
-)
-
-from utils.extraction_utils.lambda_utils import (
     format_data_to_json,
     create_filename,
     upload_to_s3,
 )
+
 import boto3
 import pytest
 import os
@@ -592,24 +590,23 @@ class TestDataFrameToParquet:
         assert df_read_back.empty
 
 
-
 class TestDimDate:
     def test_dim_date_start_date_matches_date_start_date(self):
         result = dim_date()
 
-        assert result['date_id'][0].strftime('%Y-%m-%d') == '2022-11-03'
+        assert result["date_id"][0].strftime("%Y-%m-%d") == "2022-11-03"
 
     def test_dim_date_start_date_quarter_matches_start_date(self):
         result = dim_date()
 
-        assert result['quarter'][0] == 4
+        assert result["quarter"][0] == 4
 
     def test_dim_date_end_date_matches_date_specified_end_date(self):
         result = dim_date()
 
-        assert result['date_id'][len(result)-1].strftime('%Y-%m-%d') == '2025-12-31'
+        assert result["date_id"][len(result) - 1].strftime("%Y-%m-%d") == "2025-12-31"
 
     def test_dim_date_end_date_quarter_matches_specified_end_date(self):
         result = dim_date()
 
-        assert result['quarter'][len(result)-1] == 4
+        assert result["quarter"][len(result) - 1] == 4

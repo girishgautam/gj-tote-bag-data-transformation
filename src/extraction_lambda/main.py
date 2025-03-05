@@ -2,7 +2,7 @@ import boto3
 from botocore.exceptions import ClientError, NoCredentialsError
 import json
 from datetime import datetime
-from utils.extraction_utils.lambda_utils import (
+from utils.lambda_utils import (
     upload_to_s3,
     check_for_data,
     format_data_to_json,
@@ -116,7 +116,6 @@ def extract_data(s3_client, conn, bucket_name):
         return extraction_type, updated_tables
 
 
-
 def lambda_handler(event, context):
     try:
         s3_client = boto3.client("s3")
@@ -140,7 +139,7 @@ def lambda_handler(event, context):
             report = {
                 "status": "Success",
                 "extraction_type": extraction_type,
-                "updated_tables": updated_tables
+                "updated_tables": updated_tables,
             }
             report_file_name = f"reports/{datetime.now().isoformat()}_success.json"
 
