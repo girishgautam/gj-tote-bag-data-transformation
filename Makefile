@@ -53,10 +53,10 @@ requirements: create-environment
 
 # build-lambda-layer-utils:
 # 	$(call execute_in_env, mkdir -p ../utils_layer/python/utils)
-#     $(call execute_in_env, mkdir -p ../packages/extraction_utils)
-#     $(call execute_in_env, cp -r ../utils/extraction_utils ../utils_layer/python/utils/)
+#     $(call execute_in_env, mkdir -p ../packages/utils)
+#     $(call execute_in_env, cp -r ../utils/ ../utils_layer/python/utils/)
 #     $(call execute_in_env, cd ../utils_layer)
-# 	$(call execute_in_env, zip ../packages/extraction_utils/utils.zip -r python/)
+# 	$(call execute_in_env, zip ../packages/utils/utils.zip -r python/)
 
 # terraform-setup: build-lambda-layer-dependencies build-lambda-layer-utils
 
