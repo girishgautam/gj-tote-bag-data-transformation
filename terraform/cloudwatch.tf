@@ -8,5 +8,5 @@ resource "aws_cloudwatch_metric_alarm" "cw_alarm"{
     statistic = "Sum"
     alarm_actions = [aws_sns_topic.email_alert.arn]
     alarm_description = "email alert for errors detected in cloudwatch"
-
+    threshold = 1
 }
