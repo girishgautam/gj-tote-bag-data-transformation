@@ -154,6 +154,7 @@ def get_s3_bucket_name(bucket_prefix):
 
 # Transform utils:
 
+
 def convert_json_to_df_from_s3(table, bucket_name):
     """
     Fetches a JSON file from an S3 bucket, determined by the latest timestamp in 'last_extracted.txt',
@@ -400,20 +401,38 @@ def dataframe_to_parquet(df):
 
     return parquet_buffer.getvalue()
 
+
 # output = fact_sales_order(sales_order_df)
 # print(output.head())
 
 
-def dim_date(start='2022-11-03', end='2025-12-31'):
+def dim_date(start="2022-11-03", end="2025-12-31"):
     calendar_range = pd.date_range(start, end)
 
-    df = pd.DataFrame({'date_id': calendar_range})
-    df['year'] = df.date_id.dt.year
-    df['month'] = df.date_id.dt.month
-    df['day'] = df.date_id.dt.day
-    df['day_of_week'] = df.date_id.dt.day_of_week
-    df['day_name'] = df.date_id.dt.day_name()
-    df['month_name'] = df.date_id.dt.month_name()
-    df['quarter'] = df.date_id.dt.quarter
+    df = pd.DataFrame({"date_id": calendar_range})
+    df["year"] = df.date_id.dt.year
+    df["month"] = df.date_id.dt.month
+    df["day"] = df.date_id.dt.day
+    df["day_of_week"] = df.date_id.dt.day_of_week
+    df["day_name"] = df.date_id.dt.day_name()
+    df["month_name"] = df.date_id.dt.month_name()
+    df["quarter"] = df.date_id.dt.quarter
 
+    return df
+
+
+# load utils
+
+
+def parquet_to_dataframe(pqt):
+    """
+    util function to convert parquet byte stream to pandas dataframe
+
+    args:
+      pqt is the parquet byte stream
+
+    returns:
+      df: the byte stream pqt converted to pandas dataframe
+    """
+    df = pd.read_parquet(pqt)
     return df
