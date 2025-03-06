@@ -429,17 +429,32 @@ def dim_date(start="2022-11-03", end="2025-12-31"):
 # load utils
 
 
-def parquet_to_dataframe(pqt):
+def parquet_to_dataframe(s3_client, bucket, table):
     """
-    util function to convert parquet byte stream to pandas dataframe
+    Fetches a parquet file, for a given table, from the transform S3 bucket
+    and converts the parquet file to a pandas dataframe
 
     args:
-      pqt is the parquet byte stream
+      s3_client is an AWS S3 client
+      bucket is S3 bucket name where transformed data is stored as parquet files
+      table is name of the database table
 
     returns:
-      df: the byte stream pqt converted to pandas dataframe
+      df: the last extracted parquet file converted to pandas dataframe
     """
-    df = pd.read_parquet(pqt)
+    last_extracted_obj = s3_client.get_object(
+        Bucket=bucket, Key=f"{table}/last_extracted.txt"
+    )
+    last_extracted_time = last_extracted_obj["Body"].read().decode("utf-8")
+
+    s3_response = s3_client.get_object(
+        Bucket=bucket,
+        Key=f"{table}/{last_extracted_time}.pqt",
+    )
+    parquet_bytes_stream = s3_response["Body"].read()
+    buffer = io.BytesIO(parquet_bytes_stream)
+    df = pd.read_parquet(buffer)
+
     return df
 
 
