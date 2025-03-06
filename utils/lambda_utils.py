@@ -6,6 +6,8 @@ from decimal import Decimal
 import json
 import io
 import pandas as pd
+from dotenv import load_dotenv
+import os
 
 
 def upload_to_s3(data, bucket_name, object_name):
@@ -61,11 +63,13 @@ def collect_credentials_from_AWS(sm_client, secret_id):
     return response_json
 
 
-def connection_to_database(secret_id="arn:aws:secretsmanager:eu-west-2:195275662632:secret:totesys_database-RBM0fV"):
+def connection_to_database(
+    secret_id="arn:aws:secretsmanager:eu-west-2:195275662632:secret:totesys_database-RBM0fV",
+):
     """
     Returns instance of pg8000 Connection for users to run database
-    queries from totesys database and warehouse; secret_id will default to totesys database. 
-    
+    queries from totesys database and warehouse; secret_id will default to totesys database.
+
     To access the warehouse, pass secret_id argument: "arn:aws:secretsmanager:eu-west-2:195275662632:secret:database_warehouse-u8BUI3"
     """
     sm_client = boto3.client("secretsmanager")
@@ -127,29 +131,37 @@ def format_data_to_json(rows, columns):
     return json_buffer.getvalue().encode("utf-8")
 
 
-def get_s3_bucket_name(bucket_prefix):
-    """
-    Retrieve the name of the  S3 bucket that starts with the specified prefix.
-    ingest_bucket_prefix - "data-squid-ingest-bucket-"
-    transform_bucket_prefix - "data-squid-transform-bucket-"
+def get_s3_bucket_name(bucket_key):
+    load_dotenv()
 
-    Parameters:
-    bucket_prefix (str): The prefix to match against the names of S3 buckets.
-
-    Returns:
-    str: The name of the first S3 bucket that starts with the given prefix.
+    bucket_name = os.getenv(bucket_key)
+    if not bucket_name:
+        raise ValueError("bucket name not found")
+    return bucket_name
 
 
-    """
+#     """
+#     Retrieve the name of the  S3 bucket that starts with the specified prefix.
+#     ingest_bucket_prefix - "data-squid-ingest-bucket-"
+#     transform_bucket_prefix - "data-squid-transform-bucket-"
 
-    s3_client = boto3.client("s3")
+#     Parameters:
+#     bucket_prefix (str): The prefix to match against the names of S3 buckets.
 
-    response = s3_client.list_buckets()
-    for bucket in response["Buckets"]:
-        if bucket["Name"].startswith(bucket_prefix):
-            return bucket["Name"]
-    else:
-        raise ValueError("Error: bucket prefix not found")
+#     Returns:
+#     str: The name of the first S3 bucket that starts with the given prefix.
+
+
+#     """
+
+#     s3_client = boto3.client("s3")
+
+#     response = s3_client.list_buckets()
+#     for bucket in response["Buckets"]:
+#         if bucket["Name"].startswith(bucket_prefix):
+#             return bucket["Name"]
+#     else:
+#         raise ValueError("Error: bucket prefix not found")
 
 
 # Transform utils:
@@ -186,7 +198,7 @@ def convert_json_to_df_from_s3(table, bucket_name):
     return df
 
 
-# bucket_name = get_s3_bucket_name("data-squid-ingest-bucket-")
+# bucket_name = get_s3_bucket_name("BUCKET_INGEST")
 # sales_order_df = convert_json_to_df_from_s3('sales_order', bucket_name)
 # print(sales_order_df.head())
 # df_department = convert_json_to_df_from_s3('department', bucket_name)
@@ -401,7 +413,6 @@ def dataframe_to_parquet(df):
     parquet_buffer.seek(0)
 
     return parquet_buffer.getvalue()
-
 
 
 def dim_date(start="2022-11-03", end="2025-12-31"):
