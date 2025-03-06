@@ -493,8 +493,13 @@ def insert_data_to_table(conn, table_name, df):
     cursor = conn.cursor()
     for index, row in df.iterrows():
         columns = ", ".join(df.columns)
+        conflict_column = df.columns[0]
         placeholders = ", ".join(["%s"] * len(row))
-        query = f"INSERT INTO {table_name} ({columns}) VALUES ({placeholders}) ON CONFLICT (sales_record_id) DO NOTHING;"
+        query = f"""
+            INSERT INTO {table_name} ({columns})
+            VALUES ({placeholders})
+            ON CONFLICT ({conflict_column}) DO NOTHING
+        """
 
         row_data = tuple(row)
 
@@ -503,13 +508,18 @@ def insert_data_to_table(conn, table_name, df):
             print(f"Inserted row {index + 1}")
         except Exception as e:
             print(f"Error inserting row {index + 1}: {e}")
-
+    conn.commit()
     cursor.close()
 
 
 # bucket_name = get_s3_bucket_name("data-squid-ingest-bucket-")
-# df_sales_order = convert_json_to_df_from_s3('sales_order', bucket_name)
-# fact_sales_order_df = fact_sales_order(df_sales_order)
-# print(fact_sales_order_df.head())
+# df_currency = convert_json_to_df_from_s3('currency', bucket_name)
+# dim_currency_df = dim_currency(df_currency)
+# # print(dim_currency_df.head())
 # conn = connect_to_warehouse()
-# insert_data_to_table(conn, 'fact_sales_order', fact_sales_order_df)
+# insert_data_to_table(conn, 'dim_currency', dim_currency_df)
+
+# cursor = conn.cursor()
+# query = f"DELETE FROM {'dim_currency'}"
+# cursor.execute(query)
+# conn.commit()
