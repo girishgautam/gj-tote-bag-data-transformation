@@ -1,6 +1,7 @@
 from pg8000.native import Connection
 import boto3
 import datetime
+from datetime import datetime
 import pg8000
 from botocore.exceptions import ClientError
 from decimal import Decimal
