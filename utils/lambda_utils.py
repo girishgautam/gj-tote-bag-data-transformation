@@ -512,6 +512,29 @@ def insert_data_to_table(conn, table_name, df):
     cursor.close()
 
 
+def extract_tablenames(bucket_name, report_file):
+    """
+    Retrieves the list of updated table names from a report file in an S3 bucket.
+
+    Args:
+        bucket_name (str): Name of the S3 bucket.
+        report_file (str): Key (file path) of the report file in the S3 bucket.
+
+    Returns:
+        list: Names of the updated tables.
+    """
+
+    s3_client = boto3.client('s3')
+
+    report_file_obj = s3_client.get_object(
+                Bucket=bucket_name, Key=report_file
+            )
+    report_file_str = report_file_obj["Body"].read().decode("utf-8")
+    report_file = json.loads(report_file_str)
+    tables = report_file['updated_tables']
+    return tables
+
+
 # bucket_name = get_s3_bucket_name("data-squid-ingest-bucket-")
 # df_currency = convert_json_to_df_from_s3('currency', bucket_name)
 # dim_currency_df = dim_currency(df_currency)
