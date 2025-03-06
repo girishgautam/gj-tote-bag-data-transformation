@@ -153,3 +153,12 @@ data "aws_iam_policy_document" "ingestion_sns_topic_policy" {
     ]
   }
 }
+
+
+resource "aws_lambda_permission" "allow_load_bucket" {
+  statement_id  = "AllowExecutionFromS3Bucket"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.load_lambda.arn
+  principal     = "s3.amazonaws.com"
+  source_arn    = aws_s3_bucket.transform_bucket.arn
+}
