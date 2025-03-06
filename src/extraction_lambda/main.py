@@ -12,8 +12,10 @@ from utils.lambda_utils import (
 )
 import logging
 
+logger = logging.getLogger()
+logger.setLevel("INFO")
 
-logging.basicConfig(level=logging.INFO)
+#logging.basicConfig(level=logging.INFO)
 
 
 s3_client = boto3.client("s3")
@@ -119,13 +121,13 @@ def extract_data(s3_client, conn, bucket_name):
 def lambda_handler(event, context):
     try:
         s3_client = boto3.client("s3")
-        logging.info("Succesfully created a s3 client")
+        logger.info("Succesfully created a s3 client")
 
     except NoCredentialsError:
-        logging.error("AWS credentials not found. Unable to create S3 client")
+        logger.error("AWS credentials not found. Unable to create S3 client")
         return {"result": "Failure", "error": "AWS credentials not found."}
     except ClientError as e:
-        logging.error(f"Error creating S3 client: {e}")
+        logger.error(f"Error creating S3 client: {e}")
         return {"result": "Failure", "error": "Error creating S3 client"}
 
     conn = connection_to_database()
@@ -149,7 +151,7 @@ def lambda_handler(event, context):
                 Key=report_file_name,
             )
 
-            logging.info(
+            logger.info(
                 f"Extraction successful. Report stored in\
                     S3: s3://{bucket_name}/{report_file_name}"
             )
@@ -160,13 +162,13 @@ def lambda_handler(event, context):
             }
 
     except ClientError as e:
-        logging.error(f"Error updating last_extracted.txt: {e}")
+        logger.error(f"Error updating last_extracted.txt: {e}")
         return {"result": "Failure", "error": "Error updating last_extracted.txt"}
 
     except Exception as e:
-        logging.error(f"Unexpected error: {e}")
+        logger.error(f"Unexpected error: {e}")
         return {"result": "Failure", "error": "Unexpected error"}
 
     finally:
         conn.close()
-        logging.info("Database connection closed.")
+        logger.info("Database connection closed.")
