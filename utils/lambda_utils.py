@@ -1,11 +1,14 @@
 from pg8000.native import Connection
 import boto3
+import datetime
 from datetime import datetime
+import pg8000
 from botocore.exceptions import ClientError
 from decimal import Decimal
 import json
 import io
 import pandas as pd
+import numpy as np
 
 
 def upload_to_s3(data, bucket_name, object_name):
@@ -61,11 +64,13 @@ def collect_credentials_from_AWS(sm_client, secret_id):
     return response_json
 
 
-def connection_to_database(secret_id="arn:aws:secretsmanager:eu-west-2:195275662632:secret:totesys_database-RBM0fV"):
+def connection_to_database(
+    secret_id="arn:aws:secretsmanager:eu-west-2:195275662632:secret:totesys_database-RBM0fV",
+):
     """
     Returns instance of pg8000 Connection for users to run database
-    queries from totesys database and warehouse; secret_id will default to totesys database. 
-    
+    queries from totesys database and warehouse; secret_id will default to totesys database.
+
     To access the warehouse, pass secret_id argument: "arn:aws:secretsmanager:eu-west-2:195275662632:secret:database_warehouse-u8BUI3"
     """
     sm_client = boto3.client("secretsmanager")
@@ -184,12 +189,6 @@ def convert_json_to_df_from_s3(table, bucket_name):
     json_file_io = io.StringIO(json_file_str)
     df = pd.read_json(json_file_io)
     return df
-
-
-# bucket_name = get_s3_bucket_name("data-squid-ingest-bucket-")
-# sales_order_df = convert_json_to_df_from_s3('sales_order', bucket_name)
-# print(sales_order_df.head())
-# df_department = convert_json_to_df_from_s3('department', bucket_name)
 
 
 def dim_design(df):
@@ -349,7 +348,6 @@ def fact_sales_order(df):
 
     Returns:
         pd.DataFrame: Transformed DataFrame with the following changes:
-            - A new column 'sales_record_id' is added with unique sequential integers starting from 1.
             - The 'staff_id' column is renamed to 'sales_staff_id'.
             - 'created_at' and 'last_updated' are converted to datetime objects with their date and time components
               split into separate columns:
@@ -403,7 +401,6 @@ def dataframe_to_parquet(df):
     return parquet_buffer.getvalue()
 
 
-
 def dim_date(start="2022-11-03", end="2025-12-31"):
     calendar_range = pd.date_range(start, end)
 
@@ -434,3 +431,75 @@ def parquet_to_dataframe(pqt):
     """
     df = pd.read_parquet(pqt)
     return df
+
+
+def connect_to_warehouse():
+    """
+    Establishes a connection to the data warehouse using credentials stored in AWS Secrets Manager.
+
+    This function retrieves the database credentials from AWS Secrets Manager, and then uses
+    these credentials to establish and return a connection to the data warehouse.
+
+    Returns:
+        pg8000.Connection: A connection object to the data warehouse.
+    """
+
+    secret_id = (
+        "arn:aws:secretsmanager:eu-west-2:195275662632:secret:database_warehouse-u8BUI3"
+    )
+    sm_client = boto3.client("secretsmanager")
+
+    secret = collect_credentials_from_AWS(sm_client, secret_id)
+
+    conn = pg8000.connect(
+        user=secret["username"],
+        database=secret["dbname"],
+        password=secret["password"],
+        host=secret["host"],
+        port=secret["port"],
+    )
+    return conn
+
+
+def insert_data_to_table(conn, table_name, df):
+    """
+    Inserts data from a DataFrame into a specified database table, handling conflicts by doing nothing.
+
+    Args:
+        conn (pg8000.Connection): Database connection object.
+        table_name (str): Name of the table to insert data into.
+        df (pandas.DataFrame): DataFrame containing the data to insert.
+
+    Example:
+        conn = connect_to_warehouse()
+        df = pd.DataFrame({
+            'sales_record_id': [1, 2, 3],
+            'column1': ['value1', 'value2', 'value3'],
+            'column2': ['value4', 'value5', 'value6']
+        })
+        insert_data_to_table(conn, 'your_table_name', df)
+    """
+
+    cursor = conn.cursor()
+    for index, row in df.iterrows():
+        columns = ", ".join(df.columns)
+        placeholders = ", ".join(["%s"] * len(row))
+        query = f"INSERT INTO {table_name} ({columns}) VALUES ({placeholders}) ON CONFLICT (sales_record_id) DO NOTHING;"
+
+        row_data = tuple(row)
+
+        try:
+            cursor.execute(query, row_data)
+            print(f"Inserted row {index + 1}")
+        except Exception as e:
+            print(f"Error inserting row {index + 1}: {e}")
+
+    cursor.close()
+
+
+# bucket_name = get_s3_bucket_name("data-squid-ingest-bucket-")
+# df_sales_order = convert_json_to_df_from_s3('sales_order', bucket_name)
+# fact_sales_order_df = fact_sales_order(df_sales_order)
+# print(fact_sales_order_df.head())
+# conn = connect_to_warehouse()
+# insert_data_to_table(conn, 'fact_sales_order', fact_sales_order_df)
