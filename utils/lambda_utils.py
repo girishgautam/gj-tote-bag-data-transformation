@@ -63,7 +63,9 @@ def collect_credentials_from_AWS(sm_client, secret_id):
     return response_json
 
 
-def connection_to_database(secret_id="arn:aws:secretsmanager:eu-west-2:195275662632:secret:totesys_database-RBM0fV"):
+def connection_to_database(
+    secret_id="arn:aws:secretsmanager:eu-west-2:195275662632:secret:totesys_database-RBM0fV",
+):
     """
     Returns instance of pg8000 Connection for users to run database
     queries from totesys database and warehouse; secret_id will default to totesys database.
@@ -83,7 +85,6 @@ def connection_to_database(secret_id="arn:aws:secretsmanager:eu-west-2:195275662
     return Connection(
         user=user, password=password, database=database, host=host, port=port
     )
-
 
 
 def check_for_data(s3_client, bucket_name):
@@ -187,7 +188,6 @@ def convert_json_to_df_from_s3(table, bucket_name):
     json_file_io = io.StringIO(json_file_str)
     df = pd.read_json(json_file_io)
     return df
-
 
 
 def dim_design(df):
@@ -400,7 +400,6 @@ def dataframe_to_parquet(df):
     return parquet_buffer.getvalue()
 
 
-
 def dim_date(start="2022-11-03", end="2025-12-31"):
     calendar_range = pd.date_range(start, end)
 
@@ -433,9 +432,20 @@ def parquet_to_dataframe(pqt):
     return df
 
 
-
 def connect_to_warehouse():
-    secret_id = "arn:aws:secretsmanager:eu-west-2:195275662632:secret:database_warehouse-u8BUI3"
+    """
+    Establishes a connection to the data warehouse using credentials stored in AWS Secrets Manager.
+
+    This function retrieves the database credentials from AWS Secrets Manager, and then uses
+    these credentials to establish and return a connection to the data warehouse.
+
+    Returns:
+        pg8000.Connection: A connection object to the data warehouse.
+    """
+
+    secret_id = (
+        "arn:aws:secretsmanager:eu-west-2:195275662632:secret:database_warehouse-u8BUI3"
+    )
     sm_client = boto3.client("secretsmanager")
 
     secret = collect_credentials_from_AWS(sm_client, secret_id)
@@ -445,16 +455,34 @@ def connect_to_warehouse():
         database=secret["dbname"],
         password=secret["password"],
         host=secret["host"],
-        port=secret["port"]
+        port=secret["port"],
     )
     return conn
 
 
 def insert_data_to_table(conn, table_name, df):
+    """
+    Inserts data from a DataFrame into a specified database table, handling conflicts by doing nothing.
+
+    Args:
+        conn (pg8000.Connection): Database connection object.
+        table_name (str): Name of the table to insert data into.
+        df (pandas.DataFrame): DataFrame containing the data to insert.
+
+    Example:
+        conn = connect_to_warehouse()
+        df = pd.DataFrame({
+            'sales_record_id': [1, 2, 3],
+            'column1': ['value1', 'value2', 'value3'],
+            'column2': ['value4', 'value5', 'value6']
+        })
+        insert_data_to_table(conn, 'your_table_name', df)
+    """
+
     cursor = conn.cursor()
     for index, row in df.iterrows():
-        columns = ', '.join(df.columns)
-        placeholders = ', '.join(['%s'] * len(row))
+        columns = ", ".join(df.columns)
+        placeholders = ", ".join(["%s"] * len(row))
         query = f"INSERT INTO {table_name} ({columns}) VALUES ({placeholders}) ON CONFLICT (sales_record_id) DO NOTHING;"
 
         row_data = tuple(row)
@@ -466,7 +494,6 @@ def insert_data_to_table(conn, table_name, df):
             print(f"Error inserting row {index + 1}: {e}")
 
     cursor.close()
-
 
 
 # bucket_name = get_s3_bucket_name("data-squid-ingest-bucket-")
