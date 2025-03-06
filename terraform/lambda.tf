@@ -79,9 +79,11 @@ resource "aws_lambda_function" "transform_lambda" {
     runtime = "python3.12"
 
     environment {
-    variables = {
-      BUCKET_TRANSFORM = aws_s3_bucket.transform_bucket.bucket
-    }
+      variables = {
+        BUCKET_TRANSFORM = aws_s3_bucket.transform_bucket.bucket
+        BUCKET_INGEST = aws_s3_bucket.ingest_bucket.bucket
+      }
+
   }
 }
 
