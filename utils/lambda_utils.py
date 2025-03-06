@@ -516,7 +516,7 @@ def insert_data_to_table(conn, table_name, df):
 # df_currency = convert_json_to_df_from_s3('currency', bucket_name)
 # dim_currency_df = dim_currency(df_currency)
 # # print(dim_currency_df.head())
-conn = connect_to_warehouse()
+# conn = connect_to_warehouse()
 # insert_data_to_table(conn, 'dim_currency', dim_currency_df)
 
 # cursor = conn.cursor()
