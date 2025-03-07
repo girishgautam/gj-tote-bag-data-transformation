@@ -493,14 +493,14 @@ def insert_data_to_table(conn, table_name, df):
     cursor = conn.cursor()
     for index, row in df.iterrows():
         columns = ", ".join(df.columns)
-        conflict_column = df.columns[0]
+        # conflict_column = "sales_record_id" if table_name == "fact_sales_order" else df.columns[0]
         placeholders = ", ".join(["%s"] * len(row))
         query = f"""
             INSERT INTO {table_name} ({columns})
             VALUES ({placeholders})
-            ON CONFLICT ({conflict_column}) DO NOTHING
+            ON CONFLICT DO NOTHING
         """
-
+        # ON CONFLICT ({conflict_column}) DO NOTHING
         row_data = tuple(row)
 
         try:
@@ -535,12 +535,12 @@ def extract_tablenames(bucket_name, report_file):
     return tables
 
 
-# bucket_name = get_s3_bucket_name("data-squid-ingest-bucket-")
-# df_currency = convert_json_to_df_from_s3('currency', bucket_name)
-# dim_currency_df = dim_currency(df_currency)
-# # print(dim_currency_df.head())
+# bucket_name = get_s3_bucket_name('BUCKET_INGEST')
+# df_counterparty = convert_json_to_df_from_s3('counterparty', bucket_name)
+# dim_conterparty_df = dim_counterparty(df_counterparty)
+# # # print(dim_currency_df.head())
 # conn = connect_to_warehouse()
-# insert_data_to_table(conn, 'dim_currency', dim_currency_df)
+# insert_data_to_table(conn, 'dim_counterparty', dim_conterparty_df)
 
 # cursor = conn.cursor()
 # query = f"DELETE FROM {'dim_currency'}"
