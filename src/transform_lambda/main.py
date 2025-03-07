@@ -35,7 +35,6 @@ def lambda_handler(event, context):
     ingestion_bucket_name = event['Records'][0]['s3']['bucket']['name']
     #print(ingestion_bucket_name)
     report_file = urllib.parse.unquote_plus(event['Records'][0]['s3']['object']['key'], encoding='utf-8')
-    #report_file = urllib.parse.unquote_plus(key, encoding="utf-8")
     #print(report_file)
     transform_bucket_name = get_s3_bucket_name('data-squid-transform')
 
