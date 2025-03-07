@@ -19,7 +19,7 @@ resource "aws_lambda_function" "extract_lambda" {
     handler = "main.lambda_handler"
     timeout = 900
     runtime = "python3.12"
-
+    memory_size = 3008
     environment {
     variables = {
       BUCKET_INGEST = aws_s3_bucket.ingest_bucket.bucket
@@ -48,7 +48,7 @@ resource "aws_lambda_function" "transform_lambda" {
     handler = "main.lambda_handler"
     timeout = 900
     runtime = "python3.12"
-
+    memory_size = 3008
     environment {
       variables = {
         BUCKET_TRANSFORM = aws_s3_bucket.transform_bucket.bucket
