@@ -391,17 +391,17 @@ def fact_sales_order(df):
     return fact_sales_order_df
 
 
-def dim_date(start='2022-11-03', end='2025-12-31'):
+def dim_date(start="2022-11-03", end="2025-12-31"):
     calendar_range = pd.date_range(start, end)
 
-    df = pd.DataFrame({'date_id': calendar_range})
-    df['year'] = df.date_id.dt.year
-    df['month'] = df.date_id.dt.month
-    df['day'] = df.date_id.dt.day
-    df['day_of_week'] = df.date_id.dt.day_of_week
-    df['day_name'] = df.date_id.dt.day_name()
-    df['month_name'] = df.date_id.dt.month_name()
-    df['quarter'] = df.date_id.dt.quarter
+    df = pd.DataFrame({"date_id": calendar_range})
+    df["year"] = df.date_id.dt.year
+    df["month"] = df.date_id.dt.month
+    df["day"] = df.date_id.dt.day
+    df["day_of_week"] = df.date_id.dt.day_of_week
+    df["day_name"] = df.date_id.dt.day_name()
+    df["month_name"] = df.date_id.dt.month_name()
+    df["quarter"] = df.date_id.dt.quarter
 
     return df
 
@@ -590,9 +590,7 @@ def extract_tablenames_load(bucket_name, report_file):
 conn = connect_to_warehouse()
 # insert_data_to_table(conn, 'dim_date', df_date)
 
-cursor = conn.cursor()
-query = f"DELETE FROM {'dim_date'}"
-cursor.execute(query)
-conn.commit()
-
-conn.close()
+# cursor = conn.cursor()
+# query = f"DELETE FROM {'dim_currency'}"
+# cursor.execute(query)
+# conn.commit()
