@@ -1,11 +1,14 @@
 from pg8000.native import Connection
 import boto3
+import datetime
 from datetime import datetime
+import pg8000
 from botocore.exceptions import ClientError
 from decimal import Decimal
 import json
 import io
 import pandas as pd
+import numpy as np
 
 
 def upload_to_s3(data, bucket_name, object_name):
@@ -61,14 +64,16 @@ def collect_credentials_from_AWS(sm_client, secret_id):
     return response_json
 
 
-def connection_to_database():
-    """Returns instance of pg8000 Connection for users to run database
-    queries from"""
+def connection_to_database(
+    secret_id="arn:aws:secretsmanager:eu-west-2:195275662632:secret:totesys_database-RBM0fV",
+):
+    """
+    Returns instance of pg8000 Connection for users to run database
+    queries from totesys database and warehouse; secret_id will default to totesys database.
 
+    To access the warehouse, pass secret_id argument: "arn:aws:secretsmanager:eu-west-2:195275662632:secret:database_warehouse-u8BUI3"
+    """
     sm_client = boto3.client("secretsmanager")
-    secret_id = (
-        "arn:aws:secretsmanager:eu-west-2:195275662632:secret:totesys_database-RBM0fV"
-    )
 
     response = collect_credentials_from_AWS(sm_client, secret_id)
 
@@ -128,6 +133,13 @@ def format_data_to_json(rows, columns):
 
 
 def get_s3_bucket_name(bucket_prefix):
+    # alternative method using env variables
+    # load_dotenv()
+    # bucket_name = os.getenv(bucket_key)
+    # if not bucket_name:
+    #     raise ValueError("bucket name not found")
+    # return bucket_name
+
     """
     Retrieve the name of the  S3 bucket that starts with the specified prefix.
     ingest_bucket_prefix - "data-squid-ingest-bucket-"
@@ -153,6 +165,7 @@ def get_s3_bucket_name(bucket_prefix):
 
 
 # Transform utils:
+
 
 def convert_json_to_df_from_s3(table, bucket_name):
     """
@@ -183,11 +196,6 @@ def convert_json_to_df_from_s3(table, bucket_name):
     json_file_io = io.StringIO(json_file_str)
     df = pd.read_json(json_file_io)
     return df
-
-
-# bucket_name = get_s3_bucket_name("data-squid-ingest-bucket-")
-# sales_order_df = convert_json_to_df_from_s3('sales_order', bucket_name)
-# df_department = convert_json_to_df_from_s3('department', bucket_name)
 
 
 def dim_design(df):
@@ -347,7 +355,6 @@ def fact_sales_order(df):
 
     Returns:
         pd.DataFrame: Transformed DataFrame with the following changes:
-            - A new column 'sales_record_id' is added with unique sequential integers starting from 1.
             - The 'staff_id' column is renamed to 'sales_staff_id'.
             - 'created_at' and 'last_updated' are converted to datetime objects with their date and time components
               split into separate columns:
@@ -416,6 +423,21 @@ def dataframe_to_parquet(df):
     return parquet_buffer.getvalue()
 
 
+def dim_date(start="2022-11-03", end="2025-12-31"):
+    calendar_range = pd.date_range(start, end)
+
+    df = pd.DataFrame({"date_id": calendar_range})
+    df["year"] = df.date_id.dt.year
+    df["month"] = df.date_id.dt.month
+    df["day"] = df.date_id.dt.day
+    df["day_of_week"] = df.date_id.dt.day_of_week
+    df["day_name"] = df.date_id.dt.day_name()
+    df["month_name"] = df.date_id.dt.month_name()
+    df["quarter"] = df.date_id.dt.quarter
+
+    return df
+
+
 def create_filename_for_parquet(table_name, time):
     """
     Generates a filename based on the current timestamp and the provided table name.
@@ -434,3 +456,140 @@ def create_filename_for_parquet(table_name, time):
 
     filename = f"{table_name}/{time}.pqt"
     return filename
+
+
+# load utils
+
+
+def parquet_to_dataframe(s3_client, bucket, table):
+    """
+    Fetches a parquet file, for a given table, from the transform S3 bucket
+    and converts the parquet file to a pandas dataframe
+
+    args:
+      s3_client is an AWS S3 client
+      bucket is S3 bucket name where transformed data is stored as parquet files
+      table is name of the database table
+
+    returns:
+      df: the last extracted parquet file converted to pandas dataframe
+    """
+    last_extracted_obj = s3_client.get_object(
+        Bucket=bucket, Key=f"{table}/last_extracted.txt"
+    )
+    last_extracted_time = last_extracted_obj["Body"].read().decode("utf-8")
+
+    s3_response = s3_client.get_object(
+        Bucket=bucket,
+        Key=f"{table}/{last_extracted_time}.pqt",
+    )
+    parquet_bytes_stream = s3_response["Body"].read()
+    buffer = io.BytesIO(parquet_bytes_stream)
+    df = pd.read_parquet(buffer)
+
+    return df
+
+
+def connect_to_warehouse():
+    """
+    Establishes a connection to the data warehouse using credentials stored in AWS Secrets Manager.
+
+    This function retrieves the database credentials from AWS Secrets Manager, and then uses
+    these credentials to establish and return a connection to the data warehouse.
+
+    Returns:
+        pg8000.Connection: A connection object to the data warehouse.
+    """
+
+    secret_id = (
+        "arn:aws:secretsmanager:eu-west-2:195275662632:secret:database_warehouse-u8BUI3"
+    )
+    sm_client = boto3.client("secretsmanager")
+
+    secret = collect_credentials_from_AWS(sm_client, secret_id)
+
+    conn = pg8000.connect(
+        user=secret["username"],
+        database=secret["dbname"],
+        password=secret["password"],
+        host=secret["host"],
+        port=secret["port"],
+    )
+    return conn
+
+
+def insert_data_to_table(conn, table_name, df):
+    """
+    Inserts data from a DataFrame into a specified database table, handling conflicts by doing nothing.
+
+    Args:
+        conn (pg8000.Connection): Database connection object.
+        table_name (str): Name of the table to insert data into.
+        df (pandas.DataFrame): DataFrame containing the data to insert.
+
+    Example:
+        conn = connect_to_warehouse()
+        df = pd.DataFrame({
+            'sales_record_id': [1, 2, 3],
+            'column1': ['value1', 'value2', 'value3'],
+            'column2': ['value4', 'value5', 'value6']
+        })
+        insert_data_to_table(conn, 'your_table_name', df)
+    """
+
+    cursor = conn.cursor()
+    for index, row in df.iterrows():
+        columns = ", ".join(df.columns)
+        conflict_column = df.columns[0]
+        placeholders = ", ".join(["%s"] * len(row))
+        query = f"""
+            INSERT INTO {table_name} ({columns})
+            VALUES ({placeholders})
+            ON CONFLICT ({conflict_column}) DO NOTHING
+        """
+
+        row_data = tuple(row)
+
+        try:
+            cursor.execute(query, row_data)
+            print(f"Inserted row {index + 1}")
+        except Exception as e:
+            print(f"Error inserting row {index + 1}: {e}")
+    conn.commit()
+    cursor.close()
+
+
+def extract_tablenames_load(bucket_name, report_file):
+    """
+    Retrieves the list of updated table names from a report file in an S3 bucket.
+
+    Args:
+        bucket_name (str): Name of the S3 bucket.
+        report_file (str): Key (file path) of the report file in the S3 bucket.
+
+    Returns:
+        list: Names of the updated tables.
+    """
+
+    s3_client = boto3.client("s3")
+
+    report_file_obj = s3_client.get_object(Bucket=bucket_name, Key=report_file)
+    report_file_str = report_file_obj["Body"].read().decode("utf-8")
+    report_file = json.loads(report_file_str)
+    tables = report_file["updated_tables"]
+    return tables
+
+
+# bucket_name = get_s3_bucket_name("data-squid-ingest-bucket-")
+# df_currency = convert_json_to_df_from_s3('currency', bucket_name)
+# dim_currency_df = dim_currency(df_currency)
+# # print(dim_currency_df.head())
+# conn = connect_to_warehouse()
+# insert_data_to_table(conn, 'dim_currency', dim_currency_df)
+
+# cursor = conn.cursor()
+# query = f"DELETE FROM {'dim_currency'}"
+# cursor.execute(query)
+# conn.commit()
+
+
