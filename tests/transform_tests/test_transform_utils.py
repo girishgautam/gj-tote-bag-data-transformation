@@ -12,7 +12,7 @@ from utils.lambda_utils import (
     format_data_to_json,
     create_filename,
     upload_to_s3,
-    extract_tablenames
+    extract_tablenames,
 )
 
 import boto3
@@ -609,14 +609,11 @@ class TestDimDate:
 
 class TestExtractTableNames:
 
-
     def test_extract_tablenames(self):
         """Tests the extract_tablenames function by mocking S3 client
         to verify it correctly extracts updated table names from a report file."""
 
-        sample_report = {
-        "updated_tables": ["table1", "table2", "table3"]
-        }
+        sample_report = {"updated_tables": ["table1", "table2", "table3"]}
 
         # Convert the sample data to a JSON string
         sample_report_str = json.dumps(sample_report)
@@ -627,7 +624,9 @@ class TestExtractTableNames:
 
             # Set up the mock to return the sample report
             mock_s3_client.get_object.return_value = {
-                "Body": MagicMock(read=MagicMock(return_value=sample_report_str.encode("utf-8")))
+                "Body": MagicMock(
+                    read=MagicMock(return_value=sample_report_str.encode("utf-8"))
+                )
             }
 
             bucket_name = "test-bucket"
@@ -638,4 +637,6 @@ class TestExtractTableNames:
 
             # Assertions
             assert result == sample_report["updated_tables"]
-            mock_s3_client.get_object.assert_called_once_with(Bucket=bucket_name, Key=report_file)
+            mock_s3_client.get_object.assert_called_once_with(
+                Bucket=bucket_name, Key=report_file
+            )

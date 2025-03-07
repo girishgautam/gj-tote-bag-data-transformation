@@ -64,7 +64,9 @@ def collect_credentials_from_AWS(sm_client, secret_id):
     return response_json
 
 
-def connection_to_database(secret_id="arn:aws:secretsmanager:eu-west-2:195275662632:secret:totesys_database-RBM0fV"):
+def connection_to_database(
+    secret_id="arn:aws:secretsmanager:eu-west-2:195275662632:secret:totesys_database-RBM0fV",
+):
     """
     Returns instance of pg8000 Connection for users to run database
     queries from totesys database and warehouse; secret_id will default to totesys database.
@@ -130,14 +132,13 @@ def format_data_to_json(rows, columns):
     return json_buffer.getvalue().encode("utf-8")
 
 
-def get_s3_bucket_name(bucket_key):
+def get_s3_bucket_name(bucket_prefix):
     # alternative method using env variables
     # load_dotenv()
     # bucket_name = os.getenv(bucket_key)
     # if not bucket_name:
     #     raise ValueError("bucket name not found")
     # return bucket_name
-
 
     """
     Retrieve the name of the  S3 bucket that starts with the specified prefix.
@@ -535,14 +536,12 @@ def extract_tablenames(bucket_name, report_file):
         list: Names of the updated tables.
     """
 
-    s3_client = boto3.client('s3')
+    s3_client = boto3.client("s3")
 
-    report_file_obj = s3_client.get_object(
-                Bucket=bucket_name, Key=report_file
-            )
+    report_file_obj = s3_client.get_object(Bucket=bucket_name, Key=report_file)
     report_file_str = report_file_obj["Body"].read().decode("utf-8")
     report_file = json.loads(report_file_str)
-    tables = report_file['updated_tables']
+    tables = report_file["updated_tables"]
     return tables
 
 
