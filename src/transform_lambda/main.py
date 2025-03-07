@@ -25,11 +25,16 @@ def lambda_handler(event, context):
         logging.error(f"Error creating S3 client: {e}")
         return {"result": "Failure", "error": "Error creating S3 client"}
     
+    print(event)
+    event_str = event.decode("utf-8")
+    event = json.loads(event_str)
     timestamp = datetime.now()
     timestamp_for_filename = timestamp.strftime("%Y/%m/%d/%H:%M")
     timestamp_for_last_extracted = timestamp_for_filename.encode("utf-8")
-    ingestion_bucket_name = event['Records'][0]['s3']['bucket']['name']
-    report_file = event['Records'][0]['s3']['object']['key']
+    ingestion_bucket_name = event['Records'][0]['s3']['bucket']['name'].decode("utf-8")
+    print(ingestion_bucket_name)
+    report_file = event['Records'][0]['s3']['object']['key'].decode("utf-8")
+    print(report_file)
     transform_bucket_name = get_s3_bucket_name('data-squid-transform')
 
     #These 4 variables are created for the purpose of the dim tables which require 2 dataframes to be created
