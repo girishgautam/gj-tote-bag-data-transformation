@@ -522,18 +522,14 @@ class TestFactSalesOrder:
         """
         result = fact_sales_order(test_df)
 
-        assert result["created_date"].tolist() == [
-            datetime(2025, 3, 4).date(),
-            datetime(2025, 3, 5).date(),
-        ]
+        assert result["created_date"][0].strftime("%Y-%m-%d") == "2025-03-04"
+        assert result["created_date"][1].strftime("%Y-%m-%d") == "2025-03-05"
         assert result["created_time"].tolist() == [
             datetime(2025, 3, 4, 10, 27, 15, 123456).time(),
             datetime(2025, 3, 5, 12, 0, 0).time(),
         ]
-        assert result["last_updated_date"].tolist() == [
-            datetime(2025, 3, 4).date(),
-            datetime(2025, 3, 5).date(),
-        ]
+        assert result["last_updated_date"][0].strftime("%Y-%m-%d") == "2025-03-04"
+        assert result["last_updated_date"][1].strftime("%Y-%m-%d") == "2025-03-05"
         assert result["last_updated_time"].tolist() == [
             datetime(2025, 3, 4, 10, 28, 15, 123456).time(),
             datetime(2025, 3, 5, 13, 0, 0).time(),
