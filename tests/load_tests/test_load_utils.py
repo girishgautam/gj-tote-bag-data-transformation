@@ -41,7 +41,7 @@ class TestParquetToDataframe:
 
             expected_output = parquet_to_dataframe(s3_client, test_bucket, table)
             expected_result = pd.DataFrame.from_dict({"column1": ["value1", "value2"]})
-            
+
             assert isinstance(expected_result, pd.DataFrame)
             assert expected_output.to_string() == expected_result.to_string()
 

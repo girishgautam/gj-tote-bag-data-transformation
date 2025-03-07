@@ -467,21 +467,10 @@ class TestGetS3BucketName:
             )
             yield s3
 
-    @patch.dict(
-        os.environ,
-        {
-            "BUCKET_TRANSFORM": "extract-bucket-456a",
-            "BUCKET_INGEST": "ingest-bucket-789b",
-        },
-    )
     def test_get_s3_bucket_name_found(self, setup_s3):
-
-        bucket_name = get_s3_bucket_name("BUCKET_TRANSFORM")
-        print(bucket_name)
-        print(os.getenv("BUCKET_TRANSFORM"))
-        print(os.getenv("BUCKET_INGEST"))
-        assert bucket_name == "extract-bucket-456a"
+        bucket_name = get_s3_bucket_name("test-prefix")
+        assert bucket_name in ["test-prefix-123", "test-prefix-456"]
 
     def test_get_s3_bucket_name_not_found(self, setup_s3):
         with pytest.raises(ValueError):
-            bucket_name = get_s3_bucket_name("nonexistent-key")
+            bucket_name = get_s3_bucket_name("nonexistent-prefix")

@@ -9,8 +9,6 @@ import json
 import io
 import pandas as pd
 import numpy as np
-from dotenv import load_dotenv
-import os
 
 
 def upload_to_s3(data, bucket_name, object_name):
@@ -134,37 +132,36 @@ def format_data_to_json(rows, columns):
     return json_buffer.getvalue().encode("utf-8")
 
 
-def get_s3_bucket_name(bucket_key):
-    load_dotenv()
+def get_s3_bucket_name(bucket_prefix):
+    # alternative method using env variables
+    # load_dotenv()
+    # bucket_name = os.getenv(bucket_key)
+    # if not bucket_name:
+    #     raise ValueError("bucket name not found")
+    # return bucket_name
 
-    bucket_name = os.getenv(bucket_key)
-    if not bucket_name:
-        raise ValueError("bucket name not found")
-    return bucket_name
+    """
+    Retrieve the name of the  S3 bucket that starts with the specified prefix.
+    ingest_bucket_prefix - "data-squid-ingest-bucket-"
+    transform_bucket_prefix - "data-squid-transform-bucket-"
+
+    Parameters:
+    bucket_prefix (str): The prefix to match against the names of S3 buckets.
+
+    Returns:
+    str: The name of the first S3 bucket that starts with the given prefix.
 
 
-#     """
-#     Retrieve the name of the  S3 bucket that starts with the specified prefix.
-#     ingest_bucket_prefix - "data-squid-ingest-bucket-"
-#     transform_bucket_prefix - "data-squid-transform-bucket-"
+    """
 
-#     Parameters:
-#     bucket_prefix (str): The prefix to match against the names of S3 buckets.
+    s3_client = boto3.client("s3")
 
-#     Returns:
-#     str: The name of the first S3 bucket that starts with the given prefix.
-
-
-#     """
-
-#     s3_client = boto3.client("s3")
-
-#     response = s3_client.list_buckets()
-#     for bucket in response["Buckets"]:
-#         if bucket["Name"].startswith(bucket_prefix):
-#             return bucket["Name"]
-#     else:
-#         raise ValueError("Error: bucket prefix not found")
+    response = s3_client.list_buckets()
+    for bucket in response["Buckets"]:
+        if bucket["Name"].startswith(bucket_prefix):
+            return bucket["Name"]
+    else:
+        raise ValueError("Error: bucket prefix not found")
 
 
 # Transform utils:
@@ -539,14 +536,12 @@ def extract_tablenames(bucket_name, report_file):
         list: Names of the updated tables.
     """
 
-    s3_client = boto3.client('s3')
+    s3_client = boto3.client("s3")
 
-    report_file_obj = s3_client.get_object(
-                Bucket=bucket_name, Key=report_file
-            )
+    report_file_obj = s3_client.get_object(Bucket=bucket_name, Key=report_file)
     report_file_str = report_file_obj["Body"].read().decode("utf-8")
     report_file = json.loads(report_file_str)
-    tables = report_file['updated_tables']
+    tables = report_file["updated_tables"]
     return tables
 
 
