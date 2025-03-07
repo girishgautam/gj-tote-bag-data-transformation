@@ -9,8 +9,6 @@ import json
 import io
 import pandas as pd
 import numpy as np
-from dotenv import load_dotenv
-import os
 
 
 def upload_to_s3(data, bucket_name, object_name):
@@ -66,9 +64,7 @@ def collect_credentials_from_AWS(sm_client, secret_id):
     return response_json
 
 
-def connection_to_database(
-    secret_id="arn:aws:secretsmanager:eu-west-2:195275662632:secret:totesys_database-RBM0fV",
-):
+def connection_to_database(secret_id="arn:aws:secretsmanager:eu-west-2:195275662632:secret:totesys_database-RBM0fV"):
     """
     Returns instance of pg8000 Connection for users to run database
     queries from totesys database and warehouse; secret_id will default to totesys database.
@@ -135,36 +131,36 @@ def format_data_to_json(rows, columns):
 
 
 def get_s3_bucket_name(bucket_key):
-    load_dotenv()
-
-    bucket_name = os.getenv(bucket_key)
-    if not bucket_name:
-        raise ValueError("bucket name not found")
-    return bucket_name
-
-
-#     """
-#     Retrieve the name of the  S3 bucket that starts with the specified prefix.
-#     ingest_bucket_prefix - "data-squid-ingest-bucket-"
-#     transform_bucket_prefix - "data-squid-transform-bucket-"
-
-#     Parameters:
-#     bucket_prefix (str): The prefix to match against the names of S3 buckets.
-
-#     Returns:
-#     str: The name of the first S3 bucket that starts with the given prefix.
+    # alternative method using env variables
+    # load_dotenv()
+    # bucket_name = os.getenv(bucket_key)
+    # if not bucket_name:
+    #     raise ValueError("bucket name not found")
+    # return bucket_name
 
 
-#     """
+    """
+    Retrieve the name of the  S3 bucket that starts with the specified prefix.
+    ingest_bucket_prefix - "data-squid-ingest-bucket-"
+    transform_bucket_prefix - "data-squid-transform-bucket-"
 
-#     s3_client = boto3.client("s3")
+    Parameters:
+    bucket_prefix (str): The prefix to match against the names of S3 buckets.
 
-#     response = s3_client.list_buckets()
-#     for bucket in response["Buckets"]:
-#         if bucket["Name"].startswith(bucket_prefix):
-#             return bucket["Name"]
-#     else:
-#         raise ValueError("Error: bucket prefix not found")
+    Returns:
+    str: The name of the first S3 bucket that starts with the given prefix.
+
+
+    """
+
+    s3_client = boto3.client("s3")
+
+    response = s3_client.list_buckets()
+    for bucket in response["Buckets"]:
+        if bucket["Name"].startswith(bucket_prefix):
+            return bucket["Name"]
+    else:
+        raise ValueError("Error: bucket prefix not found")
 
 
 # Transform utils:
