@@ -2,6 +2,7 @@ import boto3
 import json
 from datetime import datetime
 import logging
+import urllib
 from botocore.exceptions import ClientError, NoCredentialsError
 from utils.lambda_utils import (convert_json_to_df_from_s3, 
                                 dim_design, dim_date, 
@@ -25,11 +26,17 @@ def lambda_handler(event, context):
         logging.error(f"Error creating S3 client: {e}")
         return {"result": "Failure", "error": "Error creating S3 client"}
     
+    print(event)
+    # event_str = event.decode("utf-8")
+    # event = json.loads(event_str)
     timestamp = datetime.now()
     timestamp_for_filename = timestamp.strftime("%Y/%m/%d/%H:%M")
     timestamp_for_last_extracted = timestamp_for_filename.encode("utf-8")
     ingestion_bucket_name = event['Records'][0]['s3']['bucket']['name']
+    #print(ingestion_bucket_name)
     report_file = event['Records'][0]['s3']['object']['key']
+    #report_file = urllib.parse.unquote_plus(key, encoding="utf-8")
+    #print(report_file)
     transform_bucket_name = get_s3_bucket_name('data-squid-transform')
 
     #These 4 variables are created for the purpose of the dim tables which require 2 dataframes to be created
