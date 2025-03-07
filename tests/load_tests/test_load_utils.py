@@ -1,4 +1,7 @@
 from utils.lambda_utils import parquet_to_dataframe
+import boto3
+from moto import mock_aws
+import os
 import pytest
 import pandas as pd
 import io
@@ -9,13 +12,38 @@ from utils.lambda_utils import connect_to_warehouse, insert_data_to_table
 class TestParquetToDataframe:
 
     def test_returns_dataframe(self):
-        byte_stream = io.BytesIO()
-        df = pd.DataFrame.from_dict({"key": ["value"]})
-        pqt = df.to_parquet(byte_stream, index=False)
-        expected_output = parquet_to_dataframe(byte_stream)
-        expected_result = pd.DataFrame.from_dict({"key": ["value"]})
-        assert isinstance(expected_result, pd.DataFrame)
-        assert expected_output.to_string() == expected_result.to_string()
+        table = "addresses"
+        last_extract_time = "2025/03/06/13:39"
+        with mock_aws():
+            test_bucket = "TestBucket"
+            s3_client = boto3.client("s3")
+            s3_client.create_bucket(
+                Bucket=test_bucket,
+                CreateBucketConfiguration={"LocationConstraint": "eu-west-2"},
+            )
+            df = pd.DataFrame.from_dict({"column1": ["value1", "value2"]})
+            parquet_byte_stream = df.to_parquet()
+            s3_client.put_object(
+                Body=parquet_byte_stream,
+                Bucket=test_bucket,
+                Key=f"{table}/{last_extract_time}.pqt",
+            )
+
+            with open("last_extracted.txt", mode="w") as f:
+                f.write(last_extract_time)
+            with open("last_extracted.txt", mode="r") as f:
+                s3_client.put_object(
+                    Body=f.buffer,
+                    Bucket=test_bucket,
+                    Key=f"{table}/last_extracted.txt",
+                )
+            os.remove("last_extracted.txt")
+
+            expected_output = parquet_to_dataframe(s3_client, test_bucket, table)
+            expected_result = pd.DataFrame.from_dict({"column1": ["value1", "value2"]})
+
+            assert isinstance(expected_result, pd.DataFrame)
+            assert expected_output.to_string() == expected_result.to_string()
 
 
 class TestConnectToWarehouse:
@@ -65,7 +93,6 @@ class TestConnectToWarehouse:
 
 class TestInsertDataToTable:
 
-
     @pytest.fixture
     def mock_conn(self):
         """Fixture to create a mock database connection and cursor."""
@@ -78,11 +105,13 @@ class TestInsertDataToTable:
         """Test inserting data into the table with mocked database connection."""
 
         # Mock DataFrame
-        df = pd.DataFrame({
-            "sales_record_id": [1, 2],
-            "column1": ["value1", "value2"],
-            "column2": ["value3", "value4"]
-        })
+        df = pd.DataFrame(
+            {
+                "sales_record_id": [1, 2],
+                "column1": ["value1", "value2"],
+                "column2": ["value3", "value4"],
+            }
+        )
 
         table_name = "test_table"
 
@@ -103,7 +132,7 @@ class TestInsertDataToTable:
         """
         expected_calls = [
             ((expected_query, (1, "value1", "value3")),),
-            ((expected_query, (2, "value2", "value4")),)
+            ((expected_query, (2, "value2", "value4")),),
         ]
 
         mock_cursor.execute.assert_has_calls(expected_calls, any_order=True)

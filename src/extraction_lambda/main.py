@@ -21,7 +21,7 @@ logger.setLevel("INFO")
 
 s3_client = boto3.client("s3")
 conn = connection_to_database()
-bucket_name = get_s3_bucket_name("BUCKET_INGEST")
+bucket_name = get_s3_bucket_name("data-squid-ingest-bucket-")
 
 
 def extract_data(s3_client, conn, bucket_name):
@@ -132,7 +132,7 @@ def lambda_handler(event, context):
         return {"result": "Failure", "error": "Error creating S3 client"}
 
     conn = connection_to_database()
-    bucket_name = get_s3_bucket_name("BUCKET_INGEST")
+    bucket_name = get_s3_bucket_name("data-squid-ingest-bucket-")
 
     try:
         extraction_type, updated_tables = extract_data(s3_client, conn, bucket_name)

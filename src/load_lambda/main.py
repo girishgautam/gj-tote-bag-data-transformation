@@ -1,8 +1,10 @@
 import json
 import boto3
-from utils.lambda_utils import insert_data_to_table,\
-    connect_to_warehouse,\
-        extract_tablenames
+from utils.lambda_utils import (
+    insert_data_to_table,
+    connect_to_warehouse,
+    extract_tablenames,
+)
 
 
 # def lambda_handler(event, context):

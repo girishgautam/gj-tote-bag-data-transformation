@@ -9,8 +9,6 @@ import json
 import io
 import pandas as pd
 import numpy as np
-from dotenv import load_dotenv
-import os
 
 
 def upload_to_s3(data, bucket_name, object_name):
@@ -134,37 +132,36 @@ def format_data_to_json(rows, columns):
     return json_buffer.getvalue().encode("utf-8")
 
 
-def get_s3_bucket_name(bucket_key):
-    load_dotenv()
+def get_s3_bucket_name(bucket_prefix):
+    # alternative method using env variables
+    # load_dotenv()
+    # bucket_name = os.getenv(bucket_key)
+    # if not bucket_name:
+    #     raise ValueError("bucket name not found")
+    # return bucket_name
 
-    bucket_name = os.getenv(bucket_key)
-    if not bucket_name:
-        raise ValueError("bucket name not found")
-    return bucket_name
+    """
+    Retrieve the name of the  S3 bucket that starts with the specified prefix.
+    ingest_bucket_prefix - "data-squid-ingest-bucket-"
+    transform_bucket_prefix - "data-squid-transform-bucket-"
+
+    Parameters:
+    bucket_prefix (str): The prefix to match against the names of S3 buckets.
+
+    Returns:
+    str: The name of the first S3 bucket that starts with the given prefix.
 
 
-#     """
-#     Retrieve the name of the  S3 bucket that starts with the specified prefix.
-#     ingest_bucket_prefix - "data-squid-ingest-bucket-"
-#     transform_bucket_prefix - "data-squid-transform-bucket-"
+    """
 
-#     Parameters:
-#     bucket_prefix (str): The prefix to match against the names of S3 buckets.
+    s3_client = boto3.client("s3")
 
-#     Returns:
-#     str: The name of the first S3 bucket that starts with the given prefix.
-
-
-#     """
-
-#     s3_client = boto3.client("s3")
-
-#     response = s3_client.list_buckets()
-#     for bucket in response["Buckets"]:
-#         if bucket["Name"].startswith(bucket_prefix):
-#             return bucket["Name"]
-#     else:
-#         raise ValueError("Error: bucket prefix not found")
+    response = s3_client.list_buckets()
+    for bucket in response["Buckets"]:
+        if bucket["Name"].startswith(bucket_prefix):
+            return bucket["Name"]
+    else:
+        raise ValueError("Error: bucket prefix not found")
 
 
 # Transform utils:
@@ -394,6 +391,21 @@ def fact_sales_order(df):
     return fact_sales_order_df
 
 
+def dim_date(start='2022-11-03', end='2025-12-31'):
+    calendar_range = pd.date_range(start, end)
+
+    df = pd.DataFrame({'date_id': calendar_range})
+    df['year'] = df.date_id.dt.year
+    df['month'] = df.date_id.dt.month
+    df['day'] = df.date_id.dt.day
+    df['day_of_week'] = df.date_id.dt.day_of_week
+    df['day_name'] = df.date_id.dt.day_name()
+    df['month_name'] = df.date_id.dt.month_name()
+    df['quarter'] = df.date_id.dt.quarter
+
+    return df
+
+
 def dataframe_to_parquet(df):
     """
     Convert a pandas DataFrame to Parquet format and return it as bytes.
@@ -426,20 +438,55 @@ def dim_date(start="2022-11-03", end="2025-12-31"):
     return df
 
 
+def create_filename_for_parquet(table_name, time):
+    """
+    Generates a filename based on the current timestamp and the provided table name.
+
+    Args:
+        table_name (str): The name of the table to be included in the filename.
+
+    Returns:
+        str: A string representing the generated filename, formatted as
+             "table_name/year/month/day/timestamp.pqt".
+    """
+    # timestamp = datetime.now().isoformat()
+    # year = datetime.now().strftime("%Y")
+    # month = datetime.now().strftime("%m")
+    # day = datetime.now().strftime("%d")
+
+    filename = f"{table_name}/{time}.pqt"
+    return filename
+
+
 # load utils
 
 
-def parquet_to_dataframe(pqt):
+def parquet_to_dataframe(s3_client, bucket, table):
     """
-    util function to convert parquet byte stream to pandas dataframe
+    Fetches a parquet file, for a given table, from the transform S3 bucket
+    and converts the parquet file to a pandas dataframe
 
     args:
-      pqt is the parquet byte stream
+      s3_client is an AWS S3 client
+      bucket is S3 bucket name where transformed data is stored as parquet files
+      table is name of the database table
 
     returns:
-      df: the byte stream pqt converted to pandas dataframe
+      df: the last extracted parquet file converted to pandas dataframe
     """
-    df = pd.read_parquet(pqt)
+    last_extracted_obj = s3_client.get_object(
+        Bucket=bucket, Key=f"{table}/last_extracted.txt"
+    )
+    last_extracted_time = last_extracted_obj["Body"].read().decode("utf-8")
+
+    s3_response = s3_client.get_object(
+        Bucket=bucket,
+        Key=f"{table}/{last_extracted_time}.pqt",
+    )
+    parquet_bytes_stream = s3_response["Body"].read()
+    buffer = io.BytesIO(parquet_bytes_stream)
+    df = pd.read_parquet(buffer)
+
     return df
 
 
@@ -512,7 +559,7 @@ def insert_data_to_table(conn, table_name, df):
     cursor.close()
 
 
-def extract_tablenames(bucket_name, report_file):
+def extract_tablenames_load(bucket_name, report_file):
     """
     Retrieves the list of updated table names from a report file in an S3 bucket.
 
@@ -524,14 +571,12 @@ def extract_tablenames(bucket_name, report_file):
         list: Names of the updated tables.
     """
 
-    s3_client = boto3.client('s3')
+    s3_client = boto3.client("s3")
 
-    report_file_obj = s3_client.get_object(
-                Bucket=bucket_name, Key=report_file
-            )
+    report_file_obj = s3_client.get_object(Bucket=bucket_name, Key=report_file)
     report_file_str = report_file_obj["Body"].read().decode("utf-8")
     report_file = json.loads(report_file_str)
-    tables = report_file['updated_tables']
+    tables = report_file["updated_tables"]
     return tables
 
 
@@ -546,3 +591,5 @@ def extract_tablenames(bucket_name, report_file):
 # query = f"DELETE FROM {'dim_currency'}"
 # cursor.execute(query)
 # conn.commit()
+
+
