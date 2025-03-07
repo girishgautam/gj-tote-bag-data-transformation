@@ -20,3 +20,16 @@ resource "aws_lambda_permission" "event_permissions" {
   principal = "events.amazonaws.com"
   source_arn = aws_cloudwatch_event_rule.scheduler.arn
 }
+
+resource "aws_s3_bucket_notification" "bucket_notification" {
+  bucket = aws_s3_bucket.ingest_bucket.id
+
+  lambda_function {
+    lambda_function_arn = aws_lambda_function.transform_lambda.arn
+    events              = ["s3:ObjectCreated:*"]
+    filter_prefix       = "reports/"
+    filter_suffix       = "_success.json"
+  }
+
+  depends_on = [aws_lambda_permission.allow_ingest_bucket]
+}

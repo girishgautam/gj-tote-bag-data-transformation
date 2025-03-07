@@ -66,7 +66,7 @@ jobs:
              cd ../dependencies
              zip ../packages/dependencies/dependencies.zip -r python/
 
-      - name: copy utils in archive
+      - name: copy extract utils for archiving
         working-directory: terraform
         run: | 
              mkdir -p ../utils_layer/python/utils 

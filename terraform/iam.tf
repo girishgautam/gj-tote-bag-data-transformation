@@ -114,6 +114,9 @@ resource "aws_iam_role_policy_attachment" "extract-lambda-cloudwatch" {
   policy_arn = aws_iam_policy.cloudwatch-policy.arn
 }
 
+
+# event bridge permissions
+
 resource "aws_lambda_permission" "extract_lambda" {
   statement_id = "AllowExecutionFromCloudwatch"
   action = "lambda:InvocationFunction"
@@ -123,7 +126,7 @@ resource "aws_lambda_permission" "extract_lambda" {
 }
 
 
-#create iam for sns
+# create iam for sns
 
 data "aws_iam_policy_document" "ingestion_sns_topic_policy" {
 
@@ -152,4 +155,15 @@ data "aws_iam_policy_document" "ingestion_sns_topic_policy" {
       aws_sns_topic.email_alert.arn
     ]
   }
+}
+
+
+# s3 Permissions for ingest bucket to invoke transform lambda
+
+resource "aws_lambda_permission" "allow_ingest_bucket" {
+  statement_id  = "AllowExecutionFromS3Bucket"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.transform_lambda.arn
+  principal     = "s3.amazonaws.com"
+  source_arn    = aws_s3_bucket.ingest_bucket.arn
 }
