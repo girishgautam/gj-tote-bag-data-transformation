@@ -332,7 +332,7 @@ def dim_currency(df):
             - The 'last_updated' and 'created_at' columns are dropped from the DataFrame.
 
     """
-    dim_currency_df = df
+    dim_currency_df = df.copy()
     currency_map = {"GBP": "British Pound", "USD": "US Dollar", "EUR": "Euro"}
     dim_currency_df["currency_name"] = dim_currency_df["currency_code"].map(
         currency_map
@@ -368,7 +368,7 @@ def fact_sales_order(df):
     and enable further analysis or storage.
     """
 
-    fact_sales_order_df = df
+    fact_sales_order_df = df.copy()
 
     fact_sales_order_df.rename(columns={"staff_id": "sales_staff_id"}, inplace=True)
 
@@ -580,16 +580,19 @@ def extract_tablenames_load(bucket_name, report_file):
     return tables
 
 
-# bucket_name = get_s3_bucket_name('BUCKET_INGEST')
-# df_counterparty = convert_json_to_df_from_s3('counterparty', bucket_name)
+# bucket_name = get_s3_bucket_name('data-squid-ingest-bucket-')
+# df_date = dim_date(start="2024-11-03", end="2024-12-03")
+# df_staff = convert_json_to_df_from_s3('staff', bucket_name)
 # dim_conterparty_df = dim_counterparty(df_counterparty)
+# df_department = convert_json_to_df_from_s3('department', bucket_name)
+# dim_staff_df = dim_staff(df_staff, df_department)
 # # # print(dim_currency_df.head())
-# conn = connect_to_warehouse()
-# insert_data_to_table(conn, 'dim_counterparty', dim_conterparty_df)
+conn = connect_to_warehouse()
+# insert_data_to_table(conn, 'dim_date', df_date)
 
-# cursor = conn.cursor()
-# query = f"DELETE FROM {'dim_currency'}"
-# cursor.execute(query)
-# conn.commit()
+cursor = conn.cursor()
+query = f"DELETE FROM {'dim_date'}"
+cursor.execute(query)
+conn.commit()
 
-
+conn.close()
