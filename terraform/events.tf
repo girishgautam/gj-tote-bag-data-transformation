@@ -2,7 +2,7 @@ resource "aws_cloudwatch_event_rule" "scheduler" {
   # This should set up a scheduler that will trigger the Lambda
   # Careful! other things may need to be set up as well
   name = "trigger-extraction-lambda"
-  schedule_expression = "rate(5 minutes)"
+  schedule_expression = "rate(15 minutes)"
   description = "trigger extraction lambda"
 }
 
