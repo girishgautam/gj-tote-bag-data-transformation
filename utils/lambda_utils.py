@@ -374,7 +374,7 @@ def fact_sales_order(df):
 
     fact_sales_order_df["created_at"] = pd.to_datetime(df["created_at"], format="mixed")
     fact_sales_order_df["created_date"] = fact_sales_order_df["created_at"].dt.date
-    fact_sales_order_df["created_time"] = fact_sales_order_df["created_at"].dt.time
+    fact_sales_order_df["created_time"] = pd.to_datetime(fact_sales_order_df["created_at"].dt.time)
     fact_sales_order_df["created_date"] = pd.to_datetime(
         fact_sales_order_df["created_date"]
     )
@@ -385,9 +385,9 @@ def fact_sales_order(df):
     fact_sales_order_df["last_updated_date"] = fact_sales_order_df[
         "last_updated"
     ].dt.date
-    fact_sales_order_df["last_updated_time"] = fact_sales_order_df[
+    fact_sales_order_df["last_updated_time"] = pd.to_datetime(fact_sales_order_df[
         "last_updated"
-    ].dt.time
+    ].dt.time)
     fact_sales_order_df["last_updated_date"] = pd.to_datetime(
         fact_sales_order_df["last_updated_date"]
     )
