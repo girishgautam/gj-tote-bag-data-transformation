@@ -122,7 +122,7 @@ resource "aws_lambda_permission" "extract_lambda" {
   action = "lambda:InvocationFunction"
   principal = "events.amazonaws.com"
   function_name = aws_lambda_function.extract_lambda.function_name
-  source_arn = aws_cloudwatch_event_rule.scheduler.arn
+  # source_arn = aws_cloudwatch_event_rule.scheduler.arn
 }
 
 
