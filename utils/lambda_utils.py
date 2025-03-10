@@ -596,17 +596,33 @@ def extract_tablenames_load(bucket_name, report_file):
     return tables
 
 
-# bucket_name = get_s3_bucket_name('data-squid-ingest-bucket-')
-# df_date = dim_date(start="2024-11-03", end="2024-12-03")
-# df_staff = convert_json_to_df_from_s3('staff', bucket_name)
-# dim_conterparty_df = dim_counterparty(df_counterparty)
-# df_department = convert_json_to_df_from_s3('department', bucket_name)
-# dim_staff_df = dim_staff(df_staff, df_department)
-# # # print(dim_currency_df.head())
-# conn = connect_to_warehouse()
-# insert_data_to_table(conn, 'dim_date', df_date)
+def warehouse_queries():
+    # bucket_name = get_s3_bucket_name('data-squid-ingest-bucket-')
+    # df_date = dim_date(start="2024-11-03", end="2024-12-03")
+    # df_staff = convert_json_to_df_from_s3('staff', bucket_name)
+    # dim_conterparty_df = dim_counterparty(df_counterparty)
+    # df_department = convert_json_to_df_from_s3('department', bucket_name)
+    # dim_staff_df = dim_staff(df_staff, df_department)
+    # # # print(dim_currency_df.head())
+    conn = connect_to_warehouse()
+    # insert_data_to_table(conn, 'dim_date', df_date)
 
-# cursor = conn.cursor()
-# query = f"DELETE FROM {'fact_sales_order'}"
-# cursor.execute(query)
-# conn.commit()
+    valid_table_names = [
+        "dim_date",
+        "dim_currency",
+        "dim_location",
+        "dim_counterparty",
+        "dim_design",
+        "dim_staff",
+        "fact_sales_order",
+    ]
+
+    for table_name in valid_table_names:
+        cursor = conn.cursor()
+        query = f"DELETE FROM {table_name}"
+        cursor.execute(query)
+        conn.commit()
+
+
+if __name__ == "__main__":
+    warehouse_queries()
