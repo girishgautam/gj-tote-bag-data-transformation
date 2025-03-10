@@ -475,7 +475,7 @@ def create_filename_for_parquet(table_name, time):
 # load utils
 
 
-def parquet_to_dataframe(s3_client, bucket, table):
+def parquet_to_dataframe(bucket, table):
     """
     Fetches a parquet file, for a given table, from the transform S3 bucket
     and converts the parquet file to a pandas dataframe
@@ -488,6 +488,7 @@ def parquet_to_dataframe(s3_client, bucket, table):
     returns:
       df: the last extracted parquet file converted to pandas dataframe
     """
+    s3_client = boto3.client("s3")
     last_extracted_obj = s3_client.get_object(
         Bucket=bucket, Key=f"{table}/last_transformed.txt"
     )

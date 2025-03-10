@@ -41,7 +41,7 @@ class TestParquetToDataframe:
                 )
             os.remove(last_transformed_filename)
 
-            expected_output = parquet_to_dataframe(s3_client, test_bucket, table)
+            expected_output = parquet_to_dataframe(test_bucket, table)
             expected_result = pd.DataFrame.from_dict({"column1": ["value1", "value2"]})
 
             assert isinstance(expected_result, pd.DataFrame)
