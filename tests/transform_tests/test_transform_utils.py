@@ -700,7 +700,7 @@ class TestLambdaHandler:
 
     def test_lambda_handler_success_with_valid_trigger(self):
         
-        rows = [
+        address_rows = [
             (
                 1,
                 "6826 Herzog Via",
@@ -722,7 +722,7 @@ class TestLambdaHandler:
                 "9621 880720",
             ),
         ]
-        columns = [
+        address_columns = [
             "address_id",
             "address_line_1",
             "address_line_2",
@@ -732,6 +732,9 @@ class TestLambdaHandler:
             "country",
             "phone",
         ]
+
+        currency_rows = [(1, 'GBP', 18, 7)]
+        currency_columns = ['currency_id', 'currency_code', 'created_at', 'last_updated']
 
 
         with mock_aws():
@@ -750,22 +753,38 @@ class TestLambdaHandler:
             
             body_for_report = {
                 "status": "Success",
-                "updated_tables": ["address"]
+                "updated_tables": ["address", "currency"]
             }
-            address_json = format_data_to_json(rows, columns)
+            address_json = format_data_to_json(address_rows, address_columns)
+            currency_json = format_data_to_json(currency_rows, currency_columns)
+
             timestamp_for_filename = datetime.now().strftime("%Y/%m/%d/%H:%M")
             timestamp_for_last_extracted = timestamp_for_filename.encode("utf-8")
+            
             s3_client.put_object(
                 Bucket="TestIngestBucket",
                 Key=f"address/last_extracted.txt",
                 Body=timestamp_for_last_extracted,
             )
-            filename = create_filename(
+
+            s3_client.put_object(
+                Bucket="TestIngestBucket",
+                Key=f"currency/last_extracted.txt",
+                Body=timestamp_for_last_extracted,
+            )
+
+
+            address_filename = create_filename(
                 table_name="address", time=timestamp_for_filename
             )
+
+            currency_filename = create_filename(
+                table_name="currency", time=timestamp_for_filename
+            )
             
-            upload_to_s3(data=address_json, bucket_name="TestIngestBucket", object_name=filename)
-            
+            upload_to_s3(data=address_json, bucket_name="TestIngestBucket", object_name=address_filename)
+            upload_to_s3(data=currency_json, bucket_name="TestIngestBucket", object_name=currency_filename)
+                        
             s3_client.put_object(
                 Bucket="TestIngestBucket",
                 Key=f"reports/test_report.json",
