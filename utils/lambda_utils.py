@@ -551,6 +551,11 @@ def insert_data_to_table(conn, table_name, df):
         })
         insert_data_to_table(conn, 'your_table_name', df)
     """
+    for col in df.select_dtypes(include=['datetime64[ns]']).columns:
+        if "date" in col.lower():
+            df[col] = df[col].dt.date 
+        elif "time" in col.lower():
+            df[col] = df[col].dt.time
 
     cursor = conn.cursor()
     for index, row in df.iterrows():
