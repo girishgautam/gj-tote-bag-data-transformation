@@ -603,10 +603,10 @@ def extract_tablenames_load(bucket_name, report_file):
 # df_department = convert_json_to_df_from_s3('department', bucket_name)
 # dim_staff_df = dim_staff(df_staff, df_department)
 # # # print(dim_currency_df.head())
-conn = connect_to_warehouse()
+# conn = connect_to_warehouse()
 # insert_data_to_table(conn, 'dim_date', df_date)
 
-cursor = conn.cursor()
-query = f"DELETE FROM {'fact_sales_order'}"
-cursor.execute(query)
-conn.commit()
+# cursor = conn.cursor()
+# query = f"DELETE FROM {'fact_sales_order'}"
+# cursor.execute(query)
+# conn.commit()
