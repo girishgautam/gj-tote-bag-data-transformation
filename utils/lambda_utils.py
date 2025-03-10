@@ -570,6 +570,7 @@ def insert_data_to_table(conn, table_name, df):
             print(f"Inserted row {index + 1}")
         except Exception as e:
             print(f"Error inserting row {index + 1}: {e}")
+            print("row_data", row_data)
     conn.commit()
     cursor.close()
 
@@ -602,10 +603,10 @@ def extract_tablenames_load(bucket_name, report_file):
 # df_department = convert_json_to_df_from_s3('department', bucket_name)
 # dim_staff_df = dim_staff(df_staff, df_department)
 # # # print(dim_currency_df.head())
-conn = connect_to_warehouse()
+# conn = connect_to_warehouse()
 # insert_data_to_table(conn, 'dim_date', df_date)
 
 # cursor = conn.cursor()
-# query = f"DELETE FROM {'dim_currency'}"
+# query = f"DELETE FROM {'fact_sales_order'}"
 # cursor.execute(query)
 # conn.commit()
