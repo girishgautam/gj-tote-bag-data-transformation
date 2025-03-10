@@ -68,8 +68,9 @@ def lambda_handler(event, context):
         for table_name in transformed_table_names:
             if table_name in valid_table_names:
                 try:
+                    logger.info("Bucket name: %s", bucket_name)
                     logger.info("Processing table: %s", table_name)
-                    df = parquet_to_dataframe(table_name, bucket_name)
+                    df = parquet_to_dataframe(bucket_name, table_name)
                     insert_data_to_table(conn, table_name, df)
                     logger.info("Successfully loaded table: %s", table_name)
                 except Exception as e:
