@@ -372,9 +372,16 @@ def fact_sales_order(df):
 
     fact_sales_order_df.rename(columns={"staff_id": "sales_staff_id"}, inplace=True)
 
-    fact_sales_order_df["created_at"] = pd.to_datetime(df["created_at"], format="mixed")
+    # todo use ISO8601 format instead for to_datetime
+    fact_sales_order_df["created_at"] = pd.to_datetime(
+        df["created_at"], format="mixed", dayfirst=True
+    )
     fact_sales_order_df["created_date"] = fact_sales_order_df["created_at"].dt.date
-    fact_sales_order_df["created_time"] = pd.to_datetime(fact_sales_order_df["created_at"].dt.time)
+    created_at_time = fact_sales_order_df["created_at"].dt.time
+    print("created_at_time", created_at_time, " type=", type(created_at_time))
+    fact_sales_order_df["created_time"] = pd.to_datetime(
+        created_at_time, format="%H:%M:%S", exact=False
+    )
     fact_sales_order_df["created_date"] = pd.to_datetime(
         fact_sales_order_df["created_date"]
     )
@@ -385,9 +392,10 @@ def fact_sales_order(df):
     fact_sales_order_df["last_updated_date"] = fact_sales_order_df[
         "last_updated"
     ].dt.date
-    fact_sales_order_df["last_updated_time"] = pd.to_datetime(fact_sales_order_df[
-        "last_updated"
-    ].dt.time)
+    last_updated = fact_sales_order_df["last_updated"].dt.time
+    fact_sales_order_df["last_updated_time"] = pd.to_datetime(
+        last_updated, format="%H:%M:%S", exact=False
+    )
     fact_sales_order_df["last_updated_date"] = pd.to_datetime(
         fact_sales_order_df["last_updated_date"]
     )

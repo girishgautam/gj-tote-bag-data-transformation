@@ -10,7 +10,6 @@ from utils.lambda_utils import connect_to_warehouse, insert_data_to_table
 from src.load_lambda.main import lambda_handler
 
 
-
 class TestParquetToDataframe:
 
     def test_returns_dataframe(self):
@@ -133,7 +132,8 @@ class TestInsertDataToTable:
             ON CONFLICT DO NOTHING
         """
         expected_calls = [
-            ((expected_query, tuple(row)),) for row in df.itertuples(index=False, name=None)
+            ((expected_query, tuple(row)),)
+            for row in df.itertuples(index=False, name=None)
         ]
 
         mock_cursor.execute.assert_has_calls(expected_calls, any_order=True)
@@ -141,6 +141,7 @@ class TestInsertDataToTable:
         # Ensure commit() and cursor.close() are called
         mock_conn.commit.assert_called_once()
         mock_cursor.close.assert_called_once()
+
 
 class TestLoadLambdaHandler:
 
@@ -158,7 +159,6 @@ class TestLoadLambdaHandler:
             ]
         }
 
-
     @patch("src.load_lambda.main.logger")
     @patch("src.load_lambda.main.extract_tablenames_load")
     @patch("src.load_lambda.main.connect_to_warehouse")
@@ -172,7 +172,7 @@ class TestLoadLambdaHandler:
         mock_extract_tablenames_load,
         mock_logger,
         mock_event,
-        ):
+    ):
         # Mock dependencies
         mock_extract_tablenames_load.return_value = ["dim_date", "dim_staff"]
         mock_connect_to_warehouse.return_value = Mock()
@@ -189,15 +189,18 @@ class TestLoadLambdaHandler:
         )
 
         # Assert the mock functions were called as expected
-        mock_extract_tablenames_load.assert_called_once_with("test_bucket", "test_file.parquet")
+        mock_extract_tablenames_load.assert_called_once_with(
+            "test_bucket", "test_file.parquet"
+        )
         mock_connect_to_warehouse.assert_called_once()
         assert mock_parquet_to_dataframe.call_count == 2  # Called for each valid table
         assert mock_insert_data_to_table.call_count == 2  # Called for each valid table
 
         # Assert the response
         assert response["statusCode"] == 200
-        assert response["body"] == json.dumps("Data successfully processed and inserted")
-
+        assert response["body"] == json.dumps(
+            "Data successfully processed and inserted"
+        )
 
     # Test for handling KeyError (missing 'key' in the event)
     @patch("src.load_lambda.main.logger")

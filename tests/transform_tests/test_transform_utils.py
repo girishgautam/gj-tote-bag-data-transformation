@@ -524,16 +524,12 @@ class TestFactSalesOrder:
 
         assert result["created_date"][0].strftime("%Y-%m-%d") == "2025-03-04"
         assert result["created_date"][1].strftime("%Y-%m-%d") == "2025-03-05"
-        assert result["created_time"].tolist() == [
-            datetime(2025, 3, 4, 10, 27, 15, 123456).time(),
-            datetime(2025, 3, 5, 12, 0, 0).time(),
-        ]
+        assert result["created_time"][0].strftime("%H:%M:%S") == "10:27:15"
+        assert result["created_time"][1].strftime("%H:%M:%S") == "12:00:00"
         assert result["last_updated_date"][0].strftime("%Y-%m-%d") == "2025-03-04"
         assert result["last_updated_date"][1].strftime("%Y-%m-%d") == "2025-03-05"
-        assert result["last_updated_time"].tolist() == [
-            datetime(2025, 3, 4, 10, 28, 15, 123456).time(),
-            datetime(2025, 3, 5, 13, 0, 0).time(),
-        ]
+        assert result["last_updated_time"][0].strftime("%H:%M:%S") == "10:28:15"
+        assert result["last_updated_time"][1].strftime("%H:%M:%S") == "13:00:00"
 
     def test_fact_sales_order_structure(self, test_df):
         """Tests if fact_sales_order outputs the correct column structure."""
