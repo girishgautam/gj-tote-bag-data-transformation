@@ -411,7 +411,7 @@ def dim_date(start="2022-11-03", end="2025-12-31"):
     df = pd.DataFrame({"date_id": calendar_range})
     df["year"] = df.date_id.dt.year
     df["month"] = df.date_id.dt.month
-    df["day"] = df.date_id.c
+    df["day"] = df.date_id.day
     df["day_of_week"] = df.date_id.dt.day_of_week
     df["day_name"] = df.date_id.dt.day_name()
     df["month_name"] = df.date_id.dt.month_name()
@@ -553,7 +553,7 @@ def insert_data_to_table(conn, table_name, df):
     """
     for col in df.select_dtypes(include=['datetime64[ns]']).columns:
         if "date" in col.lower():
-            df[col] = df[col].dt.date 
+            df[col] = df[col].dt.date
         elif "time" in col.lower():
             df[col] = df[col].dt.time
 
