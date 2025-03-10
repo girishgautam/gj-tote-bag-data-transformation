@@ -552,9 +552,9 @@ def insert_data_to_table(conn, table_name, df):
         insert_data_to_table(conn, 'your_table_name', df)
     """
     for col in df.select_dtypes(include=['datetime64[ns]']).columns:
-        if "date" in col.lower():
+        if "_date" in col.lower():
             df[col] = df[col].dt.date 
-        elif "time" in col.lower():
+        elif "_time" in col.lower():
             df[col] = df[col].dt.time
 
     cursor = conn.cursor()
@@ -630,4 +630,14 @@ def warehouse_queries():
 
 
 if __name__ == "__main__":
-    warehouse_queries()
+    # warehouse_queries()
+
+    # bucket_name = get_s3_bucket_name('data-squid-ingest-bucket-')
+    # # df_date = dim_date(start="2024-11-03", end="2024-12-03")
+    # df_sales_order = convert_json_to_df_from_s3('sales_order', bucket_name)
+    # fact_sales_order_df = fact_sales_order(df_sales_order)
+    # # df_department = convert_json_to_df_from_s3('department', bucket_name)
+    # # dim_staff_df = dim_staff(df_staff, df_department)
+    # print(fact_sales_order_df.head())
+
+    pass
