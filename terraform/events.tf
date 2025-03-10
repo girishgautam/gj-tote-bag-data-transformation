@@ -34,21 +34,6 @@ resource "aws_s3_bucket_notification" "bucket_notification" {
   depends_on = [aws_lambda_permission.allow_ingest_bucket]
 }
 
-resource "aws_cloudwatch_event_target" "sns" {
-  rule      = aws_cloudwatch_event_rule.scheduler.name
-  target_id = "InvokeExtractionLambda"
-  # target id not required just a label to help identify target
-
-  arn       = aws_lambda_function.extract_lambda.arn
-}
-
-resource "aws_lambda_permission" "event_permissions" {
-  function_name = aws_lambda_function.extract_lambda.function_name
-  action = "lambda:InvokeFunction"
-  principal = "events.amazonaws.com"
-  source_arn = aws_cloudwatch_event_rule.scheduler.arn
-}
-
 resource "aws_s3_bucket_notification" "load_bucket_notification" {
   bucket = aws_s3_bucket.transform_bucket.id
 
