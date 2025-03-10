@@ -613,13 +613,13 @@ def warehouse_queries():
     # insert_data_to_table(conn, 'dim_date', df_date)
 
     valid_table_names = [
+        "fact_sales_order",
         "dim_date",
         "dim_currency",
         "dim_location",
         "dim_counterparty",
         "dim_design",
         "dim_staff",
-        "fact_sales_order",
     ]
 
     for table_name in valid_table_names:
