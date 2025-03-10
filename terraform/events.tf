@@ -33,3 +33,16 @@ resource "aws_s3_bucket_notification" "bucket_notification" {
 
   depends_on = [aws_lambda_permission.allow_ingest_bucket]
 }
+
+resource "aws_s3_bucket_notification" "load_bucket_notification" {
+  bucket = aws_s3_bucket.transform_bucket.id
+
+  lambda_function {
+    lambda_function_arn = aws_lambda_function.load_lambda.arn
+    events              = ["s3:ObjectCreated:*"]
+    filter_prefix       = "reports/"
+    filter_suffix       = "_success.json"
+  }
+
+  depends_on = [aws_lambda_permission.allow_load_bucket]
+}

@@ -57,4 +57,29 @@ resource "aws_lambda_function" "transform_lambda" {
     }
 }
 
+data "archive_file" "load_lambda"{
+    type = "zip"
+    output_file_mode = "0666"
+    source_file = "${path.module}/../src/load_lambda/main.py"
+    output_path = "${path.module}/../packages/${var.load_lambda}/function.zip"
+}
 
+resource "aws_lambda_function" "load_lambda" {
+    role = aws_iam_role.lambda_role.arn
+    function_name = var.load_lambda
+    layers = [
+      aws_lambda_layer_version.utils_layer.arn,
+      aws_lambda_layer_version.dependencies_layer.arn
+    ]
+    filename = data.archive_file.load_lambda.output_path
+    source_code_hash = filebase64sha256(data.archive_file.load_lambda.output_path)
+    handler = "main.lambda_handler"
+    timeout = 900
+    runtime = "python3.12"
+
+    environment {
+      variables = {
+        BUCKET_TRANSFORM = aws_s3_bucket.transform_bucket.bucket
+      }
+  }
+}
