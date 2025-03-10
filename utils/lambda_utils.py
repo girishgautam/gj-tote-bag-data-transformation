@@ -489,7 +489,7 @@ def parquet_to_dataframe(s3_client, bucket, table):
       df: the last extracted parquet file converted to pandas dataframe
     """
     last_extracted_obj = s3_client.get_object(
-        Bucket=bucket, Key=f"{table}/last_extracted.txt"
+        Bucket=bucket, Key=f"{table}/last_transformed.txt"
     )
     last_extracted_time = last_extracted_obj["Body"].read().decode("utf-8")
 
