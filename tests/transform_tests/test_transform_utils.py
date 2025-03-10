@@ -12,15 +12,20 @@ from utils.lambda_utils import (
     format_data_to_json,
     create_filename,
     upload_to_s3,
+    extract_tablenames_load,
 )
-
+from src.transform_lambda.main import extract_tablenames, lambda_handler
+from unittest.mock import patch
 import boto3
 import pytest
 import os
+import json
 from datetime import datetime
 from decimal import Decimal
 import pandas as pd
 import io
+from unittest.mock import patch, MagicMock
+import json
 
 
 @pytest.fixture(scope="function", autouse=False)
@@ -517,22 +522,14 @@ class TestFactSalesOrder:
         """
         result = fact_sales_order(test_df)
 
-        assert result["created_date"].tolist() == [
-            datetime(2025, 3, 4).date(),
-            datetime(2025, 3, 5).date(),
-        ]
-        assert result["created_time"].tolist() == [
-            datetime(2025, 3, 4, 10, 27, 15, 123456).time(),
-            datetime(2025, 3, 5, 12, 0, 0).time(),
-        ]
-        assert result["last_updated_date"].tolist() == [
-            datetime(2025, 3, 4).date(),
-            datetime(2025, 3, 5).date(),
-        ]
-        assert result["last_updated_time"].tolist() == [
-            datetime(2025, 3, 4, 10, 28, 15, 123456).time(),
-            datetime(2025, 3, 5, 13, 0, 0).time(),
-        ]
+        assert result["created_date"][0].strftime("%Y-%m-%d") == "2025-03-04"
+        assert result["created_date"][1].strftime("%Y-%m-%d") == "2025-03-05"
+        assert result["created_time"][0].strftime("%H:%M:%S") == "10:27:15"
+        assert result["created_time"][1].strftime("%H:%M:%S") == "12:00:00"
+        assert result["last_updated_date"][0].strftime("%Y-%m-%d") == "2025-03-04"
+        assert result["last_updated_date"][1].strftime("%Y-%m-%d") == "2025-03-05"
+        assert result["last_updated_time"][0].strftime("%H:%M:%S") == "10:28:15"
+        assert result["last_updated_time"][1].strftime("%H:%M:%S") == "13:00:00"
 
     def test_fact_sales_order_structure(self, test_df):
         """Tests if fact_sales_order outputs the correct column structure."""
@@ -602,3 +599,206 @@ class TestDimDate:
         result = dim_date()
 
         assert result["quarter"][len(result) - 1] == 4
+
+
+class TestExtractTableNames:
+
+    def test_extract_tablenames(self):
+        """Tests the extract_tablenames function by mocking S3 client
+        to verify it correctly extracts updated table names from a report file."""
+
+        sample_report = {"updated_tables": ["table1", "table2", "table3"]}
+
+        # Convert the sample data to a JSON string
+        sample_report_str = json.dumps(sample_report)
+
+        with patch("utils.lambda_utils.boto3.client") as mock_client:
+            mock_s3_client = MagicMock()
+            mock_client.return_value = mock_s3_client
+
+            # Set up the mock to return the sample report
+            mock_s3_client.get_object.return_value = {
+                "Body": MagicMock(
+                    read=MagicMock(return_value=sample_report_str.encode("utf-8"))
+                )
+            }
+
+            bucket_name = "test-bucket"
+            report_file = "test-report.json"
+
+            # Call the function
+            result = extract_tablenames_load(bucket_name, report_file)
+
+            # Assertions
+            assert result == sample_report["updated_tables"]
+            mock_s3_client.get_object.assert_called_once_with(
+                Bucket=bucket_name, Key=report_file
+            )
+
+
+class TestExtractTableNamesFromReport:
+    def test_returns_correct_filenames(self):
+        with mock_aws():
+            s3_client = boto3.client("s3")
+            s3_client.create_bucket(
+                Bucket="TestBucket",
+                CreateBucketConfiguration={"LocationConstraint": "eu-west-2"},
+            )
+            report = {
+                "status": "Success",
+                "extraction_type": "continuous",
+                "updated_tables": ["test_table1", "test_table2"],
+            }
+            s3_client.put_object(
+                Body=json.dumps(report, indent=4),
+                Bucket="TestBucket",
+                Key="test_report.json",
+            )
+
+            tables = extract_tablenames(s3_client, "TestBucket", "test_report.json")
+            assert tables[0] == "test_table1"
+            assert tables[1] == "test_table2"
+
+
+class TestLambdaHandler:
+    @patch("utils.lambda_utils.get_s3_bucket_name")
+    @patch("utils.lambda_utils.check_for_data")
+    @patch("src.transform_lambda.main.extract_tablenames")
+    def test_lambda_handler_erroneously_called_returns_warning_message(
+        self, mock_extract_tablenames, mock_check_for_data, mock_get_s3_bucket_name
+    ):
+        mock_check_for_data.return_value = True
+        mock_extract_tablenames.return_value = ["fake_table"]
+        mock_event = {
+            "Records": [
+                {
+                    "s3": {
+                        "bucket": {"name": "TestBucket"},
+                        "object": {"key": "test_report.json"},
+                    }
+                }
+            ]
+        }
+
+        mock_get_s3_bucket_name.return_value = "TestBucket"
+
+        result = lambda_handler(mock_event, {})
+
+        assert (
+            result
+            == "Lambda was called without valid tables. Extraction report should not have been created"
+        )
+
+    @patch("utils.lambda_utils.get_s3_bucket_name")
+    @patch("utils.lambda_utils.check_for_data")
+    @patch("src.transform_lambda.main.extract_tablenames")
+    def test_lambda_handler_called_with_empty_list_returns_warning_message(
+        self, mock_extract_tablenames, mock_check_for_data, mock_get_s3_bucket_name
+    ):
+        mock_check_for_data.return_value = True
+        mock_extract_tablenames.return_value = []
+        mock_event = {
+            "Records": [
+                {
+                    "s3": {
+                        "bucket": {"name": "TestBucket"},
+                        "object": {"key": "test_report.json"},
+                    }
+                }
+            ]
+        }
+
+        mock_get_s3_bucket_name.return_value = "TestBucket"
+
+        result = lambda_handler(mock_event, {})
+
+        assert (
+            result
+            == "Lambda was called without valid tables. Extraction report should not have been created"
+        )
+
+    def test_lambda_handler_success_with_valid_trigger(self):
+
+        rows = [
+            (
+                1,
+                "6826 Herzog Via",
+                None,
+                "Avon",
+                "New Patienceburgh",
+                "28441",
+                "Turkey",
+                "1803 637401",
+            ),
+            (
+                2,
+                "179 Alexie Cliffs",
+                None,
+                None,
+                "Aliso Viejo",
+                "99305-7380",
+                "San Marino",
+                "9621 880720",
+            ),
+        ]
+        columns = [
+            "address_id",
+            "address_line_1",
+            "address_line_2",
+            "district",
+            "city",
+            "postal_code",
+            "country",
+            "phone",
+        ]
+
+        with mock_aws():
+            s3_client = boto3.client("s3")
+            s3_client.create_bucket(
+                Bucket="TestIngestBucket",
+                CreateBucketConfiguration={"LocationConstraint": "eu-west-2"},
+            )
+
+            mock_event = {
+                "Records": [
+                    {
+                        "s3": {
+                            "bucket": {"name": "TestIngestBucket"},
+                            "object": {"key": "reports/test_report.json"},
+                        }
+                    }
+                ]
+            }
+
+            s3_client.create_bucket(
+                Bucket="data-squid-transform-test",
+                CreateBucketConfiguration={"LocationConstraint": "eu-west-2"},
+            )
+
+            body_for_report = {"status": "Success", "updated_tables": ["address"]}
+            address_json = format_data_to_json(rows, columns)
+            timestamp_for_filename = datetime.now().strftime("%Y/%m/%d/%H:%M")
+            timestamp_for_last_extracted = timestamp_for_filename.encode("utf-8")
+            s3_client.put_object(
+                Bucket="TestIngestBucket",
+                Key=f"address/last_extracted.txt",
+                Body=timestamp_for_last_extracted,
+            )
+            filename = create_filename(
+                table_name="address", time=timestamp_for_filename
+            )
+
+            upload_to_s3(
+                data=address_json, bucket_name="TestIngestBucket", object_name=filename
+            )
+
+            s3_client.put_object(
+                Bucket="TestIngestBucket",
+                Key=f"reports/test_report.json",
+                Body=json.dumps(body_for_report, indent=4),
+            )
+
+            result = lambda_handler(mock_event, {})
+
+            assert result["result"] == "Success"
+            assert "s3://data-squid-transform-test" in result["report_file"]

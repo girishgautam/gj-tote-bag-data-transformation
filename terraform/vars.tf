@@ -30,3 +30,8 @@ variable "utils_zip_filename" {
     default = "extraction_utils-2.zip"
 }
 
+variable "transform_zip_filename" {
+    type = string
+    # Manual workaround etag/source_hash error to force uploads to S3:
+    default = "transform.zip"
+}
