@@ -607,7 +607,7 @@ class TestExtractTableNames:
         """Tests the extract_tablenames function by mocking S3 client
         to verify it correctly extracts updated table names from a report file."""
 
-        sample_report = {"updated_tables": ["table1", "table2", "table3"]}
+        sample_report = {"transformed_tables": ["table1", "table2", "table3"]}
 
         # Convert the sample data to a JSON string
         sample_report_str = json.dumps(sample_report)
@@ -630,7 +630,7 @@ class TestExtractTableNames:
             result = extract_tablenames_load(bucket_name, report_file)
 
             # Assertions
-            assert result == sample_report["updated_tables"]
+            assert result == sample_report["transformed_tables"]
             mock_s3_client.get_object.assert_called_once_with(
                 Bucket=bucket_name, Key=report_file
             )

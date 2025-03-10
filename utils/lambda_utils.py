@@ -590,7 +590,7 @@ def extract_tablenames_load(bucket_name, report_file):
     report_file_obj = s3_client.get_object(Bucket=bucket_name, Key=report_file)
     report_file_str = report_file_obj["Body"].read().decode("utf-8")
     report_file = json.loads(report_file_str)
-    tables = report_file["updated_tables"]
+    tables = report_file["transformed_tables"]
     return tables
 
 
