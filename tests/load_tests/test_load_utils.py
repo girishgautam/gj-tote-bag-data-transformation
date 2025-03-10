@@ -30,15 +30,16 @@ class TestParquetToDataframe:
                 Key=f"{table}/{last_extract_time}.pqt",
             )
 
-            with open("last_extracted.txt", mode="w") as f:
+            last_transformed_filename = "last_transformed.txt"
+            with open(last_transformed_filename, mode="w") as f:
                 f.write(last_extract_time)
-            with open("last_extracted.txt", mode="r") as f:
+            with open(last_transformed_filename, mode="r") as f:
                 s3_client.put_object(
                     Body=f.buffer,
                     Bucket=test_bucket,
-                    Key=f"{table}/last_extracted.txt",
+                    Key=f"{table}/{last_transformed_filename}",
                 )
-            os.remove("last_extracted.txt")
+            os.remove(last_transformed_filename)
 
             expected_output = parquet_to_dataframe(s3_client, test_bucket, table)
             expected_result = pd.DataFrame.from_dict({"column1": ["value1", "value2"]})
