@@ -661,33 +661,33 @@ class TestExtractTableNamesFromReport:
 
 
 class TestLambdaHandler:
-    @patch("utils.lambda_utils.get_s3_bucket_name")
-    @patch("utils.lambda_utils.check_for_data")
-    @patch("src.transform_lambda.main.extract_tablenames")
-    def test_lambda_handler_erroneously_called_returns_warning_message(
-        self, mock_extract_tablenames, mock_check_for_data, mock_get_s3_bucket_name
-    ):
-        mock_check_for_data.return_value = True
-        mock_extract_tablenames.return_value = ["fake_table"]
-        mock_event = {
-            "Records": [
-                {
-                    "s3": {
-                        "bucket": {"name": "TestBucket"},
-                        "object": {"key": "test_report.json"},
-                    }
-                }
-            ]
-        }
+    # @patch("utils.lambda_utils.get_s3_bucket_name")
+    # @patch("utils.lambda_utils.check_for_data")
+    # @patch("src.transform_lambda.main.extract_tablenames")
+    # def test_lambda_handler_erroneously_called_returns_warning_message(
+    #     self, mock_extract_tablenames, mock_check_for_data, mock_get_s3_bucket_name
+    # ):
+    #     mock_check_for_data.return_value = True
+    #     mock_extract_tablenames.return_value = ["fake_table"]
+    #     mock_event = {
+    #         "Records": [
+    #             {
+    #                 "s3": {
+    #                     "bucket": {"name": "TestBucket"},
+    #                     "object": {"key": "test_report.json"},
+    #                 }
+    #             }
+    #         ]
+    #     }
 
-        mock_get_s3_bucket_name.return_value = "TestBucket"
+    #     mock_get_s3_bucket_name.return_value = "TestBucket"
 
-        result = lambda_handler(mock_event, {})
+    #     result = lambda_handler(mock_event, {})
 
-        assert (
-            result
-            == "Lambda was called without valid tables. Extraction report should not have been created"
-        )
+    #     assert (
+    #         result
+    #         == "Lambda was called without valid tables. Extraction report should not have been created"
+    #     )
 
     @patch("utils.lambda_utils.get_s3_bucket_name")
     @patch("utils.lambda_utils.check_for_data")

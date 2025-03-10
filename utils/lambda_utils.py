@@ -411,7 +411,7 @@ def dim_date(start="2022-11-03", end="2025-12-31"):
     df = pd.DataFrame({"date_id": calendar_range})
     df["year"] = df.date_id.dt.year
     df["month"] = df.date_id.dt.month
-    df["day"] = df.date_id.day
+    df["day"] = df.date_id.dt.day
     df["day_of_week"] = df.date_id.dt.day_of_week
     df["day_name"] = df.date_id.dt.day_name()
     df["month_name"] = df.date_id.dt.month_name()
@@ -555,6 +555,9 @@ def insert_data_to_table(conn, table_name, df):
         if "date" in col.lower():
             df[col] = df[col].dt.date
         elif "time" in col.lower():
+        if "_date" in col.lower():
+            df[col] = df[col].dt.date
+        elif "_time" in col.lower():
             df[col] = df[col].dt.time
 
     cursor = conn.cursor()
@@ -601,17 +604,43 @@ def extract_tablenames_load(bucket_name, report_file):
     return tables
 
 
-# bucket_name = get_s3_bucket_name('data-squid-ingest-bucket-')
-# df_date = dim_date(start="2024-11-03", end="2024-12-03")
-# df_staff = convert_json_to_df_from_s3('staff', bucket_name)
-# dim_conterparty_df = dim_counterparty(df_counterparty)
-# df_department = convert_json_to_df_from_s3('department', bucket_name)
-# dim_staff_df = dim_staff(df_staff, df_department)
-# # # print(dim_currency_df.head())
-# conn = connect_to_warehouse()
-# insert_data_to_table(conn, 'dim_date', df_date)
+def warehouse_queries():
+    # bucket_name = get_s3_bucket_name('data-squid-ingest-bucket-')
+    # df_date = dim_date(start="2024-11-03", end="2024-12-03")
+    # df_staff = convert_json_to_df_from_s3('staff', bucket_name)
+    # dim_conterparty_df = dim_counterparty(df_counterparty)
+    # df_department = convert_json_to_df_from_s3('department', bucket_name)
+    # dim_staff_df = dim_staff(df_staff, df_department)
+    # # # print(dim_currency_df.head())
+    conn = connect_to_warehouse()
+    # insert_data_to_table(conn, 'dim_date', df_date)
 
-# cursor = conn.cursor()
-# query = f"DELETE FROM {'fact_sales_order'}"
-# cursor.execute(query)
-# conn.commit()
+    valid_table_names = [
+        "fact_sales_order",
+        "dim_date",
+        "dim_currency",
+        "dim_location",
+        "dim_counterparty",
+        "dim_design",
+        "dim_staff",
+    ]
+
+    for table_name in valid_table_names:
+        cursor = conn.cursor()
+        query = f"DELETE FROM {table_name}"
+        cursor.execute(query)
+        conn.commit()
+
+
+if __name__ == "__main__":
+    # warehouse_queries()
+
+    # bucket_name = get_s3_bucket_name('data-squid-ingest-bucket-')
+    # # df_date = dim_date(start="2024-11-03", end="2024-12-03")
+    # df_sales_order = convert_json_to_df_from_s3('sales_order', bucket_name)
+    # fact_sales_order_df = fact_sales_order(df_sales_order)
+    # # df_department = convert_json_to_df_from_s3('department', bucket_name)
+    # # dim_staff_df = dim_staff(df_staff, df_department)
+    # print(fact_sales_order_df.head())
+
+    pass
