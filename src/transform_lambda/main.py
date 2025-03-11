@@ -35,23 +35,18 @@ def lambda_handler(event, context):
         logging.error(f"Error creating S3 client: {e}")
         return {"result": "Failure", "error": "Error creating S3 client"}
 
-    print(event)
-    # event_str = event.decode("utf-8")
-    # event = json.loads(event_str)
     timestamp = datetime.now()
     timestamp_for_filename = timestamp.strftime("%Y/%m/%d/%H:%M")
     timestamp_for_last_extracted = timestamp_for_filename.encode("utf-8")
     ingestion_bucket_name = event["Records"][0]["s3"]["bucket"]["name"]
-    # print(ingestion_bucket_name)
     report_file = urllib.parse.unquote_plus(
         event["Records"][0]["s3"]["object"]["key"], encoding="utf-8"
     )
-    # print(report_file)
     transform_bucket_name = get_s3_bucket_name("data-squid-transform")
 
-    # These 4 variables are created for the purpose of the dim tables which require 2 dataframes to be created
-    # If these paired values (address_df, counterparty_df), (department_df, staff_df) are NOT NONE eg they have recently been ingested
-    # Then a new dim table (either dim_counterparty or dim_staff or both) will be created and stored in the transform bucket
+    # These variable names are for use in creation of dim tables which require 2 dataframes in order to be created.
+    # The dataframe is stored in {tablename}_df and the {tablename}_df_exists is changed to True.
+    # The {tablename}_df_exists variables are required as dataframes themselves do not have boolean values.
     address_df = None
     address_df_exists = False
     counterparty_df = None
@@ -62,10 +57,12 @@ def lambda_handler(event, context):
     staff_df = None
     staff_df_exists = False
 
+    # This variable has been created for the purposes of ensuring that the fact_sales_order table is appended to last
+    # in the transformed_tables list. This is important for how we process the relevant tables in the load_lambda function.
     fact_sales_order_table_created = False
     transformed_tables = []
 
-    # Checks for presence of data in transform bucket, as if no data present we need to create dim_date table
+    # Checks for presence of data in transform bucket, if no data present we need to create dim_date table
     # If data is present, we do not need to create this table again as the dates will not change and are for a set period
     if check_for_data(s3_client, transform_bucket_name) == False:
         dim_date_tab = dim_date()
@@ -82,9 +79,12 @@ def lambda_handler(event, context):
         transformed_tables.append("dim_date")
 
     tables = extract_tablenames(s3_client, ingestion_bucket_name, report_file)
-    print(tables, "<<<<<<< TABLES")
+    
+
     # Iterates through all of the tables that have recently been ingested by the ingestion lambda function
-    # and stores the converted dataframe to parquet file in the transform bucket
+    # and stores the converted dataframe to parquet file in the transform bucket.
+    # If two tables are required for the formation of a dim table, we assign the {table} dataframe to a variable
+    # and then call the relevant dataframe util with both relevant variable names as args.
     for table in tables:
         try:
             dataframe = convert_json_to_df_from_s3(table, ingestion_bucket_name)
@@ -201,10 +201,10 @@ def lambda_handler(event, context):
     if fact_sales_order_table_created:
         transformed_tables.append("fact_sales_order")
 
-    print(address_df, "<<<<<<<< ADDRESS DF")
+   
 
-    # May not be necessary to have the if statement, will only run without tables...
-    # ..if there is an error in activation of the Lambda
+    # If transformed_tables list has been appended to, then we will create a report documenting the tables that have been transformed.
+    # Else, we will return and log an error message that this lambda has been triggered erroneously.
     if transformed_tables:
 
         report = {
@@ -236,8 +236,12 @@ def lambda_handler(event, context):
         return "Lambda was called without valid tables. Extraction report should not have been created"
 
 
-# This function reads the report and returns the tables which have been ingested in the latest invocation of the extract lambda
 def extract_tablenames(s3_client, bucket_name, report_file):
+    '''
+    Retrieves the most recent report file from the ingest s3 bucket that contains a JSON formatted
+    body. Returns the tablenames in a list stored on the key of "updated_tables", which the lambda handler uses
+    to iterate through and perform relevant processing on each tablename stored in the list.
+    '''
     report_file_obj = s3_client.get_object(Bucket=bucket_name, Key=report_file)
     report_file_str = report_file_obj["Body"].read().decode("utf-8")
     report_file = json.loads(report_file_str)
