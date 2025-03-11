@@ -228,3 +228,40 @@ class TestLoadLambdaHandler:
         # Assert the error response
         assert response["statusCode"] == 400
         assert "Invalid event format" in response["body"]
+
+
+    def test_lambda_handler_invalid_records(self):
+        event = {"Records": [{"s3": {}}]}  # Missing 'object' key
+        response = lambda_handler(event, None)
+        assert response["statusCode"] == 400
+        assert "Invalid event format" in response["body"]
+
+
+
+    def test_lambda_handler_extract_tablenames_error(self, mocker):
+        event = {"Records": [{"s3": {"object": {"key": "valid_key"}, "bucket": {"name": "valid_bucket"}}}]}
+        mocker.patch("src.load_lambda.main.extract_tablenames_load", side_effect=Exception("Extraction error"))
+        response = lambda_handler(event, None)
+        assert response["statusCode"] == 500
+        assert "Error extracting table names" in response["body"]
+
+
+    @patch("src.load_lambda.main.logger")
+    @patch("src.load_lambda.main.connect_to_warehouse", side_effect=Exception("Connection error"))
+    @patch("src.load_lambda.main.extract_tablenames_load", return_value=["valid_table"])
+    def test_lambda_handler_database_connection_error(self, mock_extract, mock_connect, mock_logger):
+        event = {"Records": [{"s3": {"object": {"key": "valid_key"}, "bucket": {"name": "valid_bucket"}}}]}
+
+        # Call the lambda_handler function with the mock event
+        response = lambda_handler(event, None)
+
+        # Assert the expected response
+        assert response["statusCode"] == 500
+        assert "Error connecting to the data warehouse" in response["body"]
+
+        # Verify the error was logged
+        mock_logger.error.assert_called_once_with("Error connecting to the warehouse: %s", "Connection error")
+
+
+
+    
