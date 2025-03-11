@@ -8,7 +8,7 @@ variable "transform_lambda" {
     default = "transform_lambda"
 }
 
-variable "load_lamabda" {
+variable "load_lambda" {
     type = string
     default = "load_lambda"
 }

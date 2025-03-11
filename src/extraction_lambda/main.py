@@ -173,3 +173,7 @@ def lambda_handler(event, context):
     finally:
         conn.close()
         logger.info("Database connection closed.")
+
+
+if __name__ == "__main__":
+    lambda_handler({}, {})
