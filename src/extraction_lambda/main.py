@@ -88,7 +88,6 @@ def extract_data(s3_client, conn, bucket_name):
             last_extracted_str = last_extracted_obj["Body"].read().decode("utf-8")
             dt = datetime.strptime(last_extracted_str, "%Y/%m/%d/%H:%M")
             last_extracted = dt.isoformat()
-            print(f"{table} last extraction date: {last_extracted}")
             query = f"SELECT * FROM {table} WHERE last_updated > '{last_extracted};'"
             extraction_type = "Continuous extraction"
 

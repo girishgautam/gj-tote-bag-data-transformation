@@ -84,19 +84,19 @@ The architecture consists of the following key components:
 ### Project Structure
 ```
 ./
-├── bin/                       
+├── bin/
 ├── Makefile                   # Automation file for build, test, and deployment tasks.
 ├── mvp.png                    # Minimum Viable Product diagram.
 ├── README.md                  # Project documentation with instructions and information.
 ├── requirements-lambda.txt    # Python dependencies specifically for Lambda functions.
 ├── requirements.txt           # General Python dependencies for the project.
 ├── src/                       # Source code directory.
-│   ├── extraction_lambda/     
+│   ├── extraction_lambda/
 │   │   └── main.py                 # Python code for the extraction Lambda function.
-│   ├── load_lambda/           
+│   ├── load_lambda/
 │   │   └── main.py                 # Python code for the loading Lambda function.
-│   └── transform_lambda/      
-│       └── main.py            # Python code for the transformation Lambda function.
+│   └── transform_lambda/
+│       └── main.py                 # Python code for the transformation Lambda function.
 ├── terraform/                 # Infrastructure as Code (IaC) directory containing Terraform configurations for:
 │   ├── cloudwatch.tf               # AWS CloudWatch resources (logging, monitoring).
 │   ├── events.tf                   # AWS EventBridge resources (scheduling).
@@ -108,11 +108,11 @@ The architecture consists of the following key components:
 │   ├── sns.tf                      # AWS SNS resources (notifications).
 │   └── vars.tf                     # Terraform variable definitions.
 ├── tests/                     # Test directory for unit and integration tests.
-│   ├── extraction_tests/     
+│   ├── extraction_tests/
 │   │   └── test_extraction.py      # Python unit tests for the extraction Lambda.
-│   ├── load_tests/            
+│   ├── load_tests/
 │   │   └── test_load_utils.py      # Python unit tests for the loading Lambda utilities.
-│   └── transform_tests/       
+│   └── transform_tests/
 │       └── test_transform_utils.py # Python unit tests for the transformation Lambda utilities.
 └── utils/                     # Utility functions directory
     └── lambda_utils.py             # Python utility functions used across Lambda functions.
