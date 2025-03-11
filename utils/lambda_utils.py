@@ -332,7 +332,7 @@ def dim_currency(df):
             - The 'last_updated' and 'created_at' columns are dropped from the DataFrame.
 
     """
-    dim_currency_df = df
+    dim_currency_df = df.copy()
     currency_map = {"GBP": "British Pound", "USD": "US Dollar", "EUR": "Euro"}
     dim_currency_df["currency_name"] = dim_currency_df["currency_code"].map(
         currency_map
@@ -368,13 +368,23 @@ def fact_sales_order(df):
     and enable further analysis or storage.
     """
 
-    fact_sales_order_df = df
+    fact_sales_order_df = df.copy()
 
     fact_sales_order_df.rename(columns={"staff_id": "sales_staff_id"}, inplace=True)
 
-    fact_sales_order_df["created_at"] = pd.to_datetime(df["created_at"], format="mixed")
+    # todo use ISO8601 format instead for to_datetime
+    fact_sales_order_df["created_at"] = pd.to_datetime(
+        df["created_at"], format="mixed", dayfirst=True
+    )
     fact_sales_order_df["created_date"] = fact_sales_order_df["created_at"].dt.date
-    fact_sales_order_df["created_time"] = fact_sales_order_df["created_at"].dt.time
+    created_at_time = fact_sales_order_df["created_at"].dt.time
+    print("created_at_time", created_at_time, " type=", type(created_at_time))
+    fact_sales_order_df["created_time"] = pd.to_datetime(
+        created_at_time, format="%H:%M:%S", exact=False
+    )
+    fact_sales_order_df["created_date"] = pd.to_datetime(
+        fact_sales_order_df["created_date"]
+    )
 
     fact_sales_order_df["last_updated"] = pd.to_datetime(
         df["last_updated"], format="mixed"
@@ -382,26 +392,30 @@ def fact_sales_order(df):
     fact_sales_order_df["last_updated_date"] = fact_sales_order_df[
         "last_updated"
     ].dt.date
-    fact_sales_order_df["last_updated_time"] = fact_sales_order_df[
-        "last_updated"
-    ].dt.time
+    last_updated = fact_sales_order_df["last_updated"].dt.time
+    fact_sales_order_df["last_updated_time"] = pd.to_datetime(
+        last_updated, format="%H:%M:%S", exact=False
+    )
+    fact_sales_order_df["last_updated_date"] = pd.to_datetime(
+        fact_sales_order_df["last_updated_date"]
+    )
 
     fact_sales_order_df.drop(columns=["created_at", "last_updated"], inplace=True)
 
     return fact_sales_order_df
 
 
-def dim_date(start='2022-11-03', end='2025-12-31'):
+def dim_date(start="2022-11-03", end="2025-12-31"):
     calendar_range = pd.date_range(start, end)
 
-    df = pd.DataFrame({'date_id': calendar_range})
-    df['year'] = df.date_id.dt.year
-    df['month'] = df.date_id.dt.month
-    df['day'] = df.date_id.dt.day
-    df['day_of_week'] = df.date_id.dt.day_of_week
-    df['day_name'] = df.date_id.dt.day_name()
-    df['month_name'] = df.date_id.dt.month_name()
-    df['quarter'] = df.date_id.dt.quarter
+    df = pd.DataFrame({"date_id": calendar_range})
+    df["year"] = df.date_id.dt.year
+    df["month"] = df.date_id.dt.month
+    df["day"] = df.date_id.dt.day
+    df["day_of_week"] = df.date_id.dt.day_of_week
+    df["day_name"] = df.date_id.dt.day_name()
+    df["month_name"] = df.date_id.dt.month_name()
+    df["quarter"] = df.date_id.dt.quarter
 
     return df
 
@@ -461,7 +475,7 @@ def create_filename_for_parquet(table_name, time):
 # load utils
 
 
-def parquet_to_dataframe(s3_client, bucket, table):
+def parquet_to_dataframe(bucket, table):
     """
     Fetches a parquet file, for a given table, from the transform S3 bucket
     and converts the parquet file to a pandas dataframe
@@ -474,8 +488,9 @@ def parquet_to_dataframe(s3_client, bucket, table):
     returns:
       df: the last extracted parquet file converted to pandas dataframe
     """
+    s3_client = boto3.client("s3")
     last_extracted_obj = s3_client.get_object(
-        Bucket=bucket, Key=f"{table}/last_extracted.txt"
+        Bucket=bucket, Key=f"{table}/last_transformed.txt"
     )
     last_extracted_time = last_extracted_obj["Body"].read().decode("utf-8")
 
@@ -536,18 +551,23 @@ def insert_data_to_table(conn, table_name, df):
         })
         insert_data_to_table(conn, 'your_table_name', df)
     """
+    for col in df.select_dtypes(include=['datetime64[ns]']).columns:
+        if "_date" in col.lower():
+            df[col] = df[col].dt.date 
+        elif "_time" in col.lower():
+            df[col] = df[col].dt.time
 
     cursor = conn.cursor()
     for index, row in df.iterrows():
         columns = ", ".join(df.columns)
-        conflict_column = df.columns[0]
+        # conflict_column = "sales_record_id" if table_name == "fact_sales_order" else df.columns[0]
         placeholders = ", ".join(["%s"] * len(row))
         query = f"""
             INSERT INTO {table_name} ({columns})
             VALUES ({placeholders})
-            ON CONFLICT ({conflict_column}) DO NOTHING
+            ON CONFLICT DO NOTHING
         """
-
+        # ON CONFLICT ({conflict_column}) DO NOTHING
         row_data = tuple(row)
 
         try:
@@ -555,6 +575,7 @@ def insert_data_to_table(conn, table_name, df):
             print(f"Inserted row {index + 1}")
         except Exception as e:
             print(f"Error inserting row {index + 1}: {e}")
+            print("row_data", row_data)
     conn.commit()
     cursor.close()
 
@@ -576,20 +597,47 @@ def extract_tablenames_load(bucket_name, report_file):
     report_file_obj = s3_client.get_object(Bucket=bucket_name, Key=report_file)
     report_file_str = report_file_obj["Body"].read().decode("utf-8")
     report_file = json.loads(report_file_str)
-    tables = report_file["updated_tables"]
+    tables = report_file["transformed_tables"]
     return tables
 
 
-# bucket_name = get_s3_bucket_name("data-squid-ingest-bucket-")
-# df_currency = convert_json_to_df_from_s3('currency', bucket_name)
-# dim_currency_df = dim_currency(df_currency)
-# # print(dim_currency_df.head())
-# conn = connect_to_warehouse()
-# insert_data_to_table(conn, 'dim_currency', dim_currency_df)
+# def warehouse_queries():
+#     # bucket_name = get_s3_bucket_name('data-squid-ingest-bucket-')
+#     # df_date = dim_date(start="2024-11-03", end="2024-12-03")
+#     # df_staff = convert_json_to_df_from_s3('staff', bucket_name)
+#     # dim_conterparty_df = dim_counterparty(df_counterparty)
+#     # df_department = convert_json_to_df_from_s3('department', bucket_name)
+#     # dim_staff_df = dim_staff(df_staff, df_department)
+#     # # # print(dim_currency_df.head())
+#     conn = connect_to_warehouse()
+#     # insert_data_to_table(conn, 'dim_date', df_date)
 
-# cursor = conn.cursor()
-# query = f"DELETE FROM {'dim_currency'}"
-# cursor.execute(query)
-# conn.commit()
+#     valid_table_names = [
+#         "fact_sales_order",
+#         "dim_date",
+#         "dim_currency",
+#         "dim_location",
+#         "dim_counterparty",
+#         "dim_design",
+#         "dim_staff",
+#     ]
+
+#     for table_name in valid_table_names:
+#         cursor = conn.cursor()
+#         query = f"DELETE FROM {table_name}"
+#         cursor.execute(query)
+#         conn.commit()
 
 
+if __name__ == "__main__":
+    # warehouse_queries()
+
+    # bucket_name = get_s3_bucket_name('data-squid-ingest-bucket-')
+    # # df_date = dim_date(start="2024-11-03", end="2024-12-03")
+    # df_sales_order = convert_json_to_df_from_s3('sales_order', bucket_name)
+    # fact_sales_order_df = fact_sales_order(df_sales_order)
+    # # df_department = convert_json_to_df_from_s3('department', bucket_name)
+    # # dim_staff_df = dim_staff(df_staff, df_department)
+    # print(fact_sales_order_df.head())
+
+    pass

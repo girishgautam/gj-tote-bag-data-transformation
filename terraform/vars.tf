@@ -8,7 +8,7 @@ variable "transform_lambda" {
     default = "transform_lambda"
 }
 
-variable "load_lamabda" {
+variable "load_lambda" {
     type = string
     default = "load_lambda"
 }
@@ -28,4 +28,10 @@ variable "utils_zip_filename" {
     type = string
     # Manual workaround etag/source_hash error to force uploads to S3:
     default = "extraction_utils-2.zip"
+}
+
+variable "transform_zip_filename" {
+    type = string
+    # Manual workaround etag/source_hash error to force uploads to S3:
+    default = "transform.zip"
 }
