@@ -661,36 +661,36 @@ class TestExtractTableNamesFromReport:
 
 
 class TestLambdaHandler:
-    # @patch("utils.lambda_utils.get_s3_bucket_name")
-    # @patch("utils.lambda_utils.check_for_data")
-    # @patch("src.transform_lambda.main.extract_tablenames")
-    # def test_lambda_handler_erroneously_called_returns_warning_message(
-    #     self, mock_extract_tablenames, mock_check_for_data, mock_get_s3_bucket_name
-    # ):
-    #     mock_check_for_data.return_value = True
-    #     mock_extract_tablenames.return_value = ["fake_table"]
-    #     mock_event = {
-    #         "Records": [
-    #             {
-    #                 "s3": {
-    #                     "bucket": {"name": "TestBucket"},
-    #                     "object": {"key": "test_report.json"},
-    #                 }
-    #             }
-    #         ]
-    #     }
+    @patch("src.transform_lambda.main.get_s3_bucket_name")
+    @patch("src.transform_lambda.main.check_for_data")
+    @patch("src.transform_lambda.main.extract_tablenames")
+    def test_lambda_handler_erroneously_called_returns_warning_message(
+        self, mock_extract_tablenames, mock_check_for_data, mock_get_s3_bucket_name
+    ):
+        mock_check_for_data.return_value = True
+        mock_extract_tablenames.return_value = ["fake_table"]
+        mock_event = {
+            "Records": [
+                {
+                    "s3": {
+                        "bucket": {"name": "TestBucket"},
+                        "object": {"key": "test_report.json"},
+                    }
+                }
+            ]
+        }
 
-    #     mock_get_s3_bucket_name.return_value = "TestBucket"
+        mock_get_s3_bucket_name.return_value = "TestBucket"
 
-    #     result = lambda_handler(mock_event, {})
+        result = lambda_handler(mock_event, {})
 
-    #     assert (
-    #         result
-    #         == "Lambda was called without valid tables. Extraction report should not have been created"
-    #     )
+        assert (
+            result
+            == "Lambda was called without valid tables. Extraction report should not have been created"
+        )
 
-    @patch("utils.lambda_utils.get_s3_bucket_name")
-    @patch("utils.lambda_utils.check_for_data")
+    @patch("src.transform_lambda.main.get_s3_bucket_name")
+    @patch("src.transform_lambda.main.check_for_data")
     @patch("src.transform_lambda.main.extract_tablenames")
     def test_lambda_handler_called_with_empty_list_returns_warning_message(
         self, mock_extract_tablenames, mock_check_for_data, mock_get_s3_bucket_name
@@ -718,8 +718,8 @@ class TestLambdaHandler:
         )
 
     def test_lambda_handler_success_with_valid_trigger(self):
-
-        rows = [
+        
+        address_rows = [
             (
                 1,
                 "6826 Herzog Via",
@@ -741,7 +741,7 @@ class TestLambdaHandler:
                 "9621 880720",
             ),
         ]
-        columns = [
+        address_columns = [
             "address_id",
             "address_line_1",
             "address_line_2",
@@ -751,6 +751,27 @@ class TestLambdaHandler:
             "country",
             "phone",
         ]
+
+        currency_rows = [(1, 'GBP', 18, 7)]
+        currency_columns = ['currency_id', 'currency_code', 'created_at', 'last_updated']
+
+        counterparty_rows = [
+            (1, "Fahey and Sons", 15, "Micheal Toy", "Mrs. Lucy Runolfsdottir"),
+            (2, "Leannon, Predovic and Morar", 28, "Melba Sanford", "Jean Hane III"),
+        ]
+        counterparty_columns = [
+            "counterparty_id",
+            "counterparty_legal_name",
+            "legal_address_id",
+            "commercial_contact",
+            "delivery_contact",
+        ]
+        department_rows = [(1, 'sales', 'Manchester', 'Richard Roma', 8, 8)]
+        department_columns = ['department_id', 'department_name', 'location', 'manager', 'created_at', 'last_updated']
+        
+        staff_rows = [(5, 'barry', 'white', 1, 'barrywhite@hotmail.com', 8, 8)]
+        staff_columns = ['staff_id', 'first_name', 'last_name', 'department_id', 'email_address', 'created_at', 'last_updated']
+
 
         with mock_aws():
             s3_client = boto3.client("s3")
@@ -774,24 +795,77 @@ class TestLambdaHandler:
                 Bucket="data-squid-transform-test",
                 CreateBucketConfiguration={"LocationConstraint": "eu-west-2"},
             )
+            
+            body_for_report = {
+                "status": "Success",
+                "updated_tables": ["address", "currency", "counterparty", "department", "staff"]
+            }
+            address_json = format_data_to_json(address_rows, address_columns)
+            currency_json = format_data_to_json(currency_rows, currency_columns)
+            counterparty_json = format_data_to_json(counterparty_rows, counterparty_columns)
+            department_json = format_data_to_json(department_rows, department_columns)
+            staff_json = format_data_to_json(staff_rows, staff_columns)
 
-            body_for_report = {"status": "Success", "updated_tables": ["address"]}
-            address_json = format_data_to_json(rows, columns)
             timestamp_for_filename = datetime.now().strftime("%Y/%m/%d/%H:%M")
             timestamp_for_last_extracted = timestamp_for_filename.encode("utf-8")
+            
             s3_client.put_object(
                 Bucket="TestIngestBucket",
                 Key=f"address/last_extracted.txt",
                 Body=timestamp_for_last_extracted,
             )
-            filename = create_filename(
+
+            s3_client.put_object(
+                Bucket="TestIngestBucket",
+                Key=f"currency/last_extracted.txt",
+                Body=timestamp_for_last_extracted,
+            )
+
+            s3_client.put_object(
+                Bucket="TestIngestBucket",
+                Key=f"counterparty/last_extracted.txt",
+                Body=timestamp_for_last_extracted,
+            )
+
+            s3_client.put_object(
+                Bucket="TestIngestBucket",
+                Key=f"department/last_extracted.txt",
+                Body=timestamp_for_last_extracted,
+            )
+
+            s3_client.put_object(
+                Bucket="TestIngestBucket",
+                Key=f"staff/last_extracted.txt",
+                Body=timestamp_for_last_extracted,
+            )
+
+
+            address_filename = create_filename(
                 table_name="address", time=timestamp_for_filename
             )
 
-            upload_to_s3(
-                data=address_json, bucket_name="TestIngestBucket", object_name=filename
+            currency_filename = create_filename(
+                table_name="currency", time=timestamp_for_filename
             )
 
+            counterparty_filename = create_filename(
+                table_name="counterparty", time=timestamp_for_filename
+            )
+            
+            department_filename = create_filename(
+                table_name="department", time=timestamp_for_filename
+            )
+
+            staff_filename = create_filename(
+                table_name="staff", time=timestamp_for_filename
+            )
+            
+            upload_to_s3(data=address_json, bucket_name="TestIngestBucket", object_name=address_filename)
+            upload_to_s3(data=currency_json, bucket_name="TestIngestBucket", object_name=currency_filename)
+            upload_to_s3(data=counterparty_json, bucket_name="TestIngestBucket", object_name=counterparty_filename)
+            upload_to_s3(data=department_json, bucket_name="TestIngestBucket", object_name=department_filename)
+            upload_to_s3(data=staff_json, bucket_name="TestIngestBucket", object_name=staff_filename)
+                        
             s3_client.put_object(
                 Bucket="TestIngestBucket",
                 Key=f"reports/test_report.json",
