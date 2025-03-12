@@ -262,7 +262,30 @@ def dim_staff(df_1, df_2):
 
 
 def dim_location(df):
+    """
+    Extracts columns from the input DataFrame to create the `dim_location` DataFrame.
 
+    The resulting DataFrame is used for location-related information and can be further processed or analyzed.
+
+    Parameters:
+    -----------
+    df : pandas.DataFrame
+        The input DataFrame containing address-related data.
+
+    Returns:
+    --------
+    pandas.DataFrame
+    A DataFrame containing the columns: 
+        "location_id" (renamed from address_id),
+        "address_line_1",
+        "address_line_2",
+        "district",
+        "city",
+        "postal_code",
+        "country",
+        "phone",
+
+    """
     dim_location_df = df[
         [
             "address_id",
@@ -430,22 +453,6 @@ def dataframe_to_parquet(df):
     parquet_buffer.seek(0)
 
     return parquet_buffer.getvalue()
-
-
-def dim_date(start="2022-11-03", end="2025-12-31"):
-    calendar_range = pd.date_range(start, end)
-
-    df = pd.DataFrame({"date_id": calendar_range})
-    df["year"] = df.date_id.dt.year
-    df["month"] = df.date_id.dt.month
-    df["day"] = df.date_id.dt.day
-    df["day_of_week"] = df.date_id.dt.day_of_week
-    df["day_name"] = df.date_id.dt.day_name()
-    df["month_name"] = df.date_id.dt.month_name()
-    df["quarter"] = df.date_id.dt.quarter
-
-    return df
-
 
 def create_filename_for_parquet(table_name, time):
     """
